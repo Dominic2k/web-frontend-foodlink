@@ -1,0 +1,36 @@
+.users-page {
+  animation: fadeIn var(--transition-base) ease;
+}
+
+.users-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+.users-table-card {
+  overflow: hidden;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.user-cell-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}

@@ -1,0 +1,214 @@
+.user-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.user-detail-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.user-detail-badges {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.user-detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.detail-row-icon {
+  color: var(--color-primary);
+  font-size: 1rem;
+  margin-top: 2px;
+}
+.detail-row-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 1px;
+}
+.detail-row-value {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  word-break: break-all;
+}
+.detail-row-id {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* Modal large */
+.modal-lg {
+  max-width: 640px;
+  max-height: 90vh;
+}
+
+/* Family Members Section */
+.family-section {
+  border-top: 1px solid var(--color-border-light);
+  padding-top: 4px;
+}
+
+.family-section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text);
+  transition: color var(--transition-fast);
+}
+.family-section-toggle:hover {
+  color: var(--color-primary);
+}
+
+.family-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.family-section-icon {
+  color: var(--color-primary);
+}
+.family-count-badge {
+  background: var(--color-primary-50);
+  color: var(--color-primary-dark);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  min-width: 22px;
+  text-align: center;
+}
+
+.family-section-content {
+  padding: 0 4px 8px;
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+.family-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.family-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 0;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.family-error {
+  padding: 14px 16px;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Family Member Cards */
+.family-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.family-member-card {
+  padding: 14px 16px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  transition: box-shadow var(--transition-fast);
+}
+.family-member-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.family-member-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.family-member-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #ff7043, #ff9800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.family-member-main {
+  display: flex;
+  flex-direction: column;
+}
+.family-member-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.family-member-rel {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.family-member-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.family-detail-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+}
+
+.family-member-conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
