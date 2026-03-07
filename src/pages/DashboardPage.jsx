@@ -15,6 +15,7 @@ import {
   FiTrash2,
   FiRefreshCw,
   FiZap,
+  FiSmartphone,
 } from 'react-icons/fi';
 import {
   XAxis,
@@ -158,6 +159,13 @@ export default function DashboardPage() {
       value: stats?.totalHealthConditions || 0,
       icon: FiActivity,
       gradient: 'linear-gradient(135deg, #ff8a65, #ff5722)',
+    },
+    {
+      label: 'App Visits',
+      value: stats?.totalAppVisits || 0,
+      sub: `${stats?.todayAppVisits || 0} today`,
+      icon: FiSmartphone,
+      gradient: 'linear-gradient(135deg, #26c6da, #00838f)',
     },
   ];
 
@@ -382,7 +390,38 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 5: Recent Activity Log — spans full width */}
+        {/* 5: App Visits Trend — Area Chart */}
+        <div className="card chart-card">
+          <div className="card-header">
+            <h3>📱 App Visits (Last 7 Days)</h3>
+          </div>
+          <div className="card-body chart-body">
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={(stats?.dailyAppVisits || []).map(d => ({ date: d.date, visits: d.count }))}>
+                <defs>
+                  <linearGradient id="visitGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#26c6da" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#26c6da" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Area
+                  type="monotone"
+                  dataKey="visits"
+                  stroke="#26c6da"
+                  strokeWidth={3}
+                  fill="url(#visitGradient)"
+                  name="Visits"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 6: Recent Activity Log — spans full width */}
         <div className="card chart-card chart-card-wide">
           <div className="card-header">
             <h3>📋 Recent Activity</h3>
