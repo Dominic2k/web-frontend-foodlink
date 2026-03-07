@@ -9,6 +9,7 @@ import IngredientsPage from './pages/IngredientsPage';
 import RecipesPage from './pages/RecipesPage';
 import OrdersPage from './pages/OrdersPage';
 import HealthConditionsPage from './pages/HealthConditionsPage';
+import DishCategoriesPage from './pages/DishCategoriesPage';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -34,6 +35,7 @@ function App() {
         <Route path="recipes" element={<RecipesPage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="health-conditions" element={<HealthConditionsPage />} />
+        <Route path="dish-categories" element={<DishCategoriesPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

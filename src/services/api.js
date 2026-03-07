@@ -76,13 +76,17 @@ export const adminAPI = {
     updateOrderStatus: (id, status) =>
         api.put(`/admin/orders/${id}/status`, { status }),
 
-    // Health Conditions
-    getHealthConditions: (params) =>
-        api.get("/admin/health-conditions", { params }),
-    createHealthCondition: (data) => api.post("/admin/health-conditions", data),
-    updateHealthCondition: (id, data) =>
-        api.put(`/admin/health-conditions/${id}`, data),
-    deleteHealthCondition: (id) => api.delete(`/admin/health-conditions/${id}`),
+  // Health Conditions
+  getHealthConditions: (params) => api.get('/admin/health-conditions', { params }),
+  createHealthCondition: (data) => api.post('/admin/health-conditions', data),
+  updateHealthCondition: (id, data) => api.put(`/admin/health-conditions/${id}`, data),
+  deleteHealthCondition: (id) => api.delete(`/admin/health-conditions/${id}`),
+
+  // Dish Categories
+  getDishCategories: (params) => api.get('/admin/dish-categories', { params }),
+  createDishCategory: (data) => api.post('/admin/dish-categories', data),
+  updateDishCategory: (id, data) => api.put(`/admin/dish-categories/${id}`, data),
+  deactivateDishCategory: (id) => api.put(`/admin/dish-categories/${id}/deactivate`),
 };
 
 export default api;
