@@ -11,6 +11,7 @@ import {
   FiPackage,
   FiBook,
   FiShoppingBag,
+  FiList,
 } from 'react-icons/fi';
 import './AdminLayout.css';
 
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/recipes', icon: FiBook, label: 'Recipes' },
   { to: '/orders', icon: FiShoppingBag, label: 'Orders' },
   { to: '/health-conditions', icon: FiActivity, label: 'Health Conditions' },
+  { to: '/dish-categories', icon: FiList, label: 'Dish Categories' },
 ];
 
 export default function AdminLayout() {
