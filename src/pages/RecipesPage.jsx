@@ -33,6 +33,7 @@ export default function RecipesPage() {
   const [toast, setToast] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null); // stores recipe ID to delete
   const [allIngredients, setAllIngredients] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [showFullInstructions, setShowFullInstructions] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -57,18 +58,27 @@ export default function RecipesPage() {
     } catch (e) { console.error(e); }
   };
 
+  const fetchAllCategories = async () => {
+    try {
+      const res = await adminAPI.getAllDishCategories();
+      setAllCategories(res.data.data || []);
+    } catch (e) { console.error(e); }
+  };
+
   const showToast = (msg, type) => { setToast({ message: msg, type }); setTimeout(() => setToast(null), 3000); };
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', description: '', instructions: '', prepTimeMin: '', cookTimeMin: '', baseServings: '1', imageUrl: '', status: 'draft', ingredients: [] });
+    setForm({ name: '', description: '', instructions: '', prepTimeMin: '', cookTimeMin: '', baseServings: '1', imageUrl: '', status: 'draft', ingredients: [], categoryIds: [] });
     fetchAllIngredients();
+    fetchAllCategories();
     setShowModal(true);
   };
 
   const openEdit = async (item) => {
     setEditing(item);
     await fetchAllIngredients();
+    await fetchAllCategories();
     // fetch full detail to get ingredients
     try {
       const res = await adminAPI.getRecipeById(item.id);
@@ -86,6 +96,7 @@ export default function RecipesPage() {
         prepTimeMin: detail.prepTimeMin ?? '', cookTimeMin: detail.cookTimeMin ?? '',
         baseServings: detail.baseServings ?? '1', imageUrl: detail.imageUrl || '', status: detail.status || 'draft',
         ingredients,
+        categoryIds: (detail.categories || []).map(c => c.id),
       });
     } catch (e) {
       // fallback to basic info
@@ -94,6 +105,7 @@ export default function RecipesPage() {
         prepTimeMin: item.prepTimeMin ?? '', cookTimeMin: item.cookTimeMin ?? '',
         baseServings: item.baseServings ?? '1', imageUrl: item.imageUrl || '', status: item.status || 'draft',
         ingredients: [],
+        categoryIds: (item.categories || []).map(c => c.id),
       });
     }
     setShowModal(true);
@@ -150,6 +162,7 @@ export default function RecipesPage() {
       imageUrl: form.imageUrl,
       status: form.status,
       ingredients: ingredientsPayload,
+      categoryIds: form.categoryIds || [],
     };
     try {
       if (editing) {
@@ -230,12 +243,21 @@ export default function RecipesPage() {
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
                 <thead><tr>
-                  <th>Name</th><th>Time</th><th>Servings</th><th>Ingredients</th><th>Status</th><th>Created By</th><th style={{ textAlign: 'right' }}>Actions</th>
+                  <th>Name</th><th>Categories</th><th>Time</th><th>Servings</th><th>Ingredients</th><th>Status</th><th>Created By</th><th style={{ textAlign: 'right' }}>Actions</th>
                 </tr></thead>
                 <tbody>
                   {items.map(r => (
                     <tr key={r.id}>
                       <td style={{ fontWeight: 600 }}>{r.name}</td>
+                      <td>
+                        {r.categories && r.categories.length > 0 ? (
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {r.categories.map(c => (
+                              <span key={c.id} className="badge badge-info" style={{ fontSize: '0.7rem' }}>{c.name}</span>
+                            ))}
+                          </div>
+                        ) : <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>—</span>}
+                      </td>
                       <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
                         {r.prepTimeMin ? `${r.prepTimeMin}' prep` : ''}{r.prepTimeMin && r.cookTimeMin ? ' + ' : ''}{r.cookTimeMin ? `${r.cookTimeMin}' cook` : ''}
                         {!r.prepTimeMin && !r.cookTimeMin && '—'}
@@ -313,6 +335,30 @@ export default function RecipesPage() {
                   <option value="published">Published</option>
                   <option value="archived">Archived</option>
                 </select>
+              </div>
+
+              {/* ===== Categories Section ===== */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 6 }}>Categories</label>
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', gap: 8,
+                  border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
+                  padding: '10px 12px', maxHeight: 120, overflowY: 'auto',
+                  background: 'var(--color-bg-secondary, rgba(0,0,0,0.02))'
+                }}>
+                  {allCategories.length === 0 ? (
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>No categories available</span>
+                  ) : allCategories.map(cat => (
+                    <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={(form.categoryIds || []).includes(cat.id)}
+                        onChange={e => {
+                          const ids = form.categoryIds || [];
+                          setForm(f => ({ ...f, categoryIds: e.target.checked ? [...ids, cat.id] : ids.filter(id => id !== cat.id) }));
+                        }} />
+                      {cat.name}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               {/* ===== Ingredients Section ===== */}
@@ -429,6 +475,18 @@ export default function RecipesPage() {
                 </div>
               )}
               {detailItem.description && <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', marginBottom: 16 }}>{detailItem.description}</p>}
+
+              {/* Categories */}
+              {detailItem.categories && detailItem.categories.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Categories</h4>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {detailItem.categories.map(c => (
+                      <span key={c.id} className="badge badge-info">{c.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
                 {detailItem.prepTimeMin && (

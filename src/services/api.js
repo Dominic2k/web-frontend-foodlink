@@ -87,6 +87,7 @@ export const adminAPI = {
   createDishCategory: (data) => api.post('/admin/dish-categories', data),
   updateDishCategory: (id, data) => api.put(`/admin/dish-categories/${id}`, data),
   deactivateDishCategory: (id) => api.put(`/admin/dish-categories/${id}/deactivate`),
+  getAllDishCategories: () => api.get('/admin/dish-categories/all'),
 };
 
 export default api;
