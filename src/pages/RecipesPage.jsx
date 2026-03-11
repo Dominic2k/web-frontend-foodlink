@@ -210,6 +210,11 @@ export default function RecipesPage() {
     </div>
   );
 
+  const formatMoney = (value) => {
+    if (value == null || value === '') return '—';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value);
+  };
+
   return (
     <div style={{ animation: 'fadeIn var(--transition-base) ease' }}>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -243,7 +248,7 @@ export default function RecipesPage() {
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
                 <thead><tr>
-                  <th>Name</th><th>Categories</th><th>Time</th><th>Servings</th><th>Ingredients</th><th>Status</th><th>Created By</th><th style={{ textAlign: 'right' }}>Actions</th>
+                  <th>Name</th><th>Categories</th><th>Time</th><th>Servings</th><th>Giá/khẩu phần</th><th>Ingredients</th><th>Status</th><th>Created By</th><th style={{ textAlign: 'right' }}>Actions</th>
                 </tr></thead>
                 <tbody>
                   {items.map(r => (
@@ -263,6 +268,7 @@ export default function RecipesPage() {
                         {!r.prepTimeMin && !r.cookTimeMin && '—'}
                       </td>
                       <td style={{ color: 'var(--color-text-secondary)' }}>{r.baseServings || '—'}</td>
+                      <td style={{ color: 'var(--color-text-secondary)', fontWeight: 600 }}>{formatMoney(r.pricePerServing)}</td>
                       <td>
                         <span className="badge badge-info" style={{ fontSize: '0.75rem' }}>
                           {r.ingredients ? r.ingredients.length : 0} items
@@ -504,6 +510,14 @@ export default function RecipesPage() {
                     <span style={{ fontWeight: 600 }}>Servings:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{detailItem.baseServings}</span>
                   </div>
                 )}
+              </div>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                <div style={{ fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 600 }}>Total ingredient cost:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(detailItem.totalIngredientPrice)}</span>
+                </div>
+                <div style={{ fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 600 }}>Price per serving:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(detailItem.pricePerServing)}</span>
+                </div>
               </div>
 
               {detailItem.instructions && (
