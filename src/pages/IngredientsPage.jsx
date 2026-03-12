@@ -13,7 +13,7 @@ export default function IngredientsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    name: '', category: '', defaultUnit: '', imageUrl: '', isActive: true,
+    name: '', category: '', defaultUnit: '', price: '', imageUrl: '', isActive: true,
     caloriesPer100: '', proteinGPer100: '', carbGPer100: '', fatGPer100: '',
   });
   const [saving, setSaving] = useState(false);
@@ -38,7 +38,7 @@ export default function IngredientsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', category: '', defaultUnit: '', imageUrl: '', isActive: true,
+    setForm({ name: '', category: '', defaultUnit: '', price: '', imageUrl: '', isActive: true,
       caloriesPer100: '', proteinGPer100: '', carbGPer100: '', fatGPer100: '' });
     setShowModal(true);
   };
@@ -47,6 +47,7 @@ export default function IngredientsPage() {
     setEditing(item);
     setForm({
       name: item.name || '', category: item.category || '', defaultUnit: item.defaultUnit || '',
+      price: item.price ?? '',
       imageUrl: item.imageUrl || '', isActive: item.isActive ?? true,
       caloriesPer100: item.caloriesPer100 ?? '', proteinGPer100: item.proteinGPer100 ?? '',
       carbGPer100: item.carbGPer100 ?? '', fatGPer100: item.fatGPer100 ?? '',
@@ -55,10 +56,11 @@ export default function IngredientsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim() || form.price === '') return;
     setSaving(true);
     const payload = {
       ...form,
+      price: form.price !== '' ? Number(form.price) : null,
       caloriesPer100: form.caloriesPer100 !== '' ? Number(form.caloriesPer100) : null,
       proteinGPer100: form.proteinGPer100 !== '' ? Number(form.proteinGPer100) : null,
       carbGPer100: form.carbGPer100 !== '' ? Number(form.carbGPer100) : null,
@@ -94,6 +96,11 @@ export default function IngredientsPage() {
     </div>
   );
 
+  const formatMoney = (value) => {
+    if (value == null || value === '') return '—';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value);
+  };
+
   return (
     <div style={{ animation: 'fadeIn var(--transition-base) ease' }}>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -121,7 +128,7 @@ export default function IngredientsPage() {
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
                 <thead><tr>
-                  <th>Name</th><th>Category</th><th>Unit</th><th>Cal/100</th><th>Protein</th><th>Carb</th><th>Fat</th><th>Status</th><th style={{ textAlign: 'right' }}>Actions</th>
+                  <th>Name</th><th>Category</th><th>Unit</th><th>Price</th><th>Cal/100</th><th>Protein</th><th>Carb</th><th>Fat</th><th>Status</th><th style={{ textAlign: 'right' }}>Actions</th>
                 </tr></thead>
                 <tbody>
                   {items.map(i => (
@@ -129,6 +136,7 @@ export default function IngredientsPage() {
                       <td style={{ fontWeight: 600 }}>{i.name}</td>
                       <td><span className="badge badge-info">{i.category || '—'}</span></td>
                       <td style={{ color: 'var(--color-text-secondary)' }}>{i.defaultUnit || '—'}</td>
+                      <td style={{ color: 'var(--color-text-secondary)', fontWeight: 600 }}>{formatMoney(i.price)}</td>
                       <td style={{ color: 'var(--color-text-secondary)' }}>{i.caloriesPer100 ?? '—'}</td>
                       <td style={{ color: 'var(--color-text-secondary)' }}>{i.proteinGPer100 ?? '—'}</td>
                       <td style={{ color: 'var(--color-text-secondary)' }}>{i.carbGPer100 ?? '—'}</td>
@@ -172,6 +180,7 @@ export default function IngredientsPage() {
                 {inp('Category', 'category')}
                 {inp('Default Unit', 'defaultUnit')}
               </div>
+              {inp('Price *', 'price', 'number')}
               {inp('Image URL', 'imageUrl')}
               <div style={{ borderTop: '1px solid var(--color-border-light)', paddingTop: 14 }}>
                 <p style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 10, color: 'var(--color-text-secondary)' }}>Nutrition Info (per 100g)</p>
