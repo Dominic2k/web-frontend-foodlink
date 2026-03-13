@@ -7,6 +7,7 @@ export default function IngredientsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -22,17 +23,24 @@ export default function IngredientsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminAPI.getIngredients({ search, page, size: 10, sortBy: 'createdAt', sortDir: 'desc' });
+      const res = await adminAPI.getIngredients({
+        search,
+        status: statusFilter || undefined,
+        page,
+        size: 10,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
+      });
       const d = res.data.data;
       setItems(d.content || []);
       setTotalPages(d.totalPages || 0);
       setTotalElements(d.totalElements || 0);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [search, page]);
+  }, [search, statusFilter, page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { setPage(0); }, [search]);
+  useEffect(() => { setPage(0); }, [search, statusFilter]);
 
   const showToast = (msg, type) => { setToast({ message: msg, type }); setTimeout(() => setToast(null), 3000); };
 
@@ -111,11 +119,19 @@ export default function IngredientsPage() {
         <button className="btn btn-primary" onClick={openCreate}><FiPlus /> Add New</button>
       </div>
 
-      <div className="card" style={{ padding: '16px 20px', marginBottom: 16 }}>
-        <div className="input-with-icon" style={{ maxWidth: 360 }}>
+      <div className="card" style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+        <div className="input-with-icon" style={{ maxWidth: 280, flex: '1 1 280px' }}>
           <FiSearch className="input-icon" />
           <input className="input" placeholder="Search by name or category..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
+        <select className="input" style={{ width: 180 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <button className="btn btn-outline" onClick={() => { setSearch(''); setStatusFilter(''); setPage(0); }}>
+          Reset Filters
+        </button>
       </div>
 
       <div className="card">

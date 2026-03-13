@@ -4,7 +4,7 @@ import Toast from '../components/Toast';
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiEye, FiX } from 'react-icons/fi';
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'All' },
+  { value: '', label: 'All Status' },
   { value: 'draft', label: 'Draft' },
   { value: 'published', label: 'Published' },
   { value: 'archived', label: 'Archived' },
@@ -19,6 +19,7 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -39,17 +40,25 @@ export default function RecipesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminAPI.getRecipes({ search, status: statusFilter || undefined, page, size: 10, sortBy: 'createdAt', sortDir: 'desc' });
+      const res = await adminAPI.getRecipes({
+        search,
+        status: statusFilter || undefined,
+        category: categoryFilter || undefined,
+        page,
+        size: 10,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
+      });
       const d = res.data.data;
       setItems(d.content || []);
       setTotalPages(d.totalPages || 0);
       setTotalElements(d.totalElements || 0);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [search, statusFilter, page]);
+  }, [search, statusFilter, categoryFilter, page]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { setPage(0); }, [search, statusFilter]);
+  useEffect(() => { fetchData(); fetchAllCategories(); }, [fetchData]);
+  useEffect(() => { setPage(0); }, [search, statusFilter, categoryFilter]);
 
   const fetchAllIngredients = async () => {
     try {
@@ -226,16 +235,22 @@ export default function RecipesPage() {
       </div>
 
       <div className="card" style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div className="input-with-icon" style={{ maxWidth: 300, flex: 1 }}>
+        <div className="input-with-icon" style={{ maxWidth: 280, flex: '1 1 280px' }}>
           <FiSearch className="input-icon" />
           <input className="input" placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {STATUS_OPTIONS.map(s => (
-            <button key={s.value} className={`btn btn-sm ${statusFilter === s.value ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setStatusFilter(s.value)}>{s.label}</button>
-          ))}
-        </div>
+        <select className="input" style={{ width: 180 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+          {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        <select className="input" style={{ width: 180 }} value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+          <option value="">All categories</option>
+          {allCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        </select>
+        <button className="btn btn-outline" onClick={() => {
+          setSearch(''); setStatusFilter(''); setCategoryFilter(''); setPage(0);
+        }}>
+          Reset Filters
+        </button>
       </div>
 
       <div className="card">
