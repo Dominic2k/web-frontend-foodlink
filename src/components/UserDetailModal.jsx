@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiX, FiMail, FiPhone, FiMapPin, FiCalendar, FiShield, FiHeart, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { FiX, FiMail, FiPhone, FiMapPin, FiCalendar, FiShield, FiHeart, FiClock, FiActivity, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { adminAPI } from '../services/api';
 import './UserDetailModal.css';
 
@@ -53,6 +53,34 @@ export default function UserDetailModal({ user, onClose }) {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const formatRelativeTime = (dateStr) => {
+    if (!dateStr) return '—';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 30) return `${diffDays} ngày trước`;
+    return formatDate(dateStr);
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds && seconds !== 0) return '—';
+    seconds = Math.round(seconds);
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins < 60) return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    const remainMins = mins % 60;
+    return remainMins > 0 ? `${hours}h ${remainMins}m` : `${hours}h`;
   };
 
   const formatBirthDate = (dateStr) => {
@@ -131,6 +159,31 @@ export default function UserDetailModal({ user, onClose }) {
               <div>
                 <span className="detail-row-label">Address</span>
                 <span className="detail-row-value">{user.address || '—'}</span>
+              </div>
+            </div>
+            <div className="detail-row">
+              <FiClock className="detail-row-icon" />
+              <div>
+                <span className="detail-row-label">Last Login</span>
+                <span className="detail-row-value">
+                  {user.lastLoginAt
+                    ? `${formatRelativeTime(user.lastLoginAt)} (${formatDate(user.lastLoginAt)})`
+                    : '—'}
+                </span>
+              </div>
+            </div>
+            <div className="detail-row">
+              <FiActivity className="detail-row-icon" />
+              <div>
+                <span className="detail-row-label">Avg. Session Duration</span>
+                <span className="detail-row-value">
+                  {formatDuration(user.avgSessionDurationSeconds)}
+                  {user.lastSessionDurationSeconds != null && (
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.85em', marginLeft: 8 }}>
+                      (last: {formatDuration(user.lastSessionDurationSeconds)})
+                    </span>
+                  )}
+                </span>
               </div>
             </div>
             <div className="detail-row">
