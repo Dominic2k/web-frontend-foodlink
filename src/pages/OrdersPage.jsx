@@ -59,7 +59,10 @@ export default function OrdersPage() {
   };
 
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-  const formatMoney = (v) => v != null ? '$' + Number(v).toLocaleString('en-US') : '—';
+  const formatMoney = (v) => {
+    if (v == null || v === '') return '—';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
+  };
 
   return (
     <div style={{ animation: 'fadeIn var(--transition-base) ease' }}>
@@ -162,22 +165,40 @@ export default function OrdersPage() {
                 ))}
               </div>
               {detailItem.items && detailItem.items.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 8 }}>Order Items</h4>
-                  <table className="data-table">
-                    <thead><tr><th>Ingredient</th><th>Qty</th><th>Unit</th><th>Price</th><th>Subtotal</th></tr></thead>
-                    <tbody>
-                      {detailItem.items.map((item, idx) => (
-                        <tr key={idx}>
-                          <td style={{ fontWeight: 500 }}>{item.ingredientName}</td>
-                          <td>{item.quantity}</td>
-                          <td>{item.unit}</td>
-                          <td>{formatMoney(item.price)}</td>
-                          <td style={{ fontWeight: 600 }}>{formatMoney(item.lineTotal)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={{ marginTop: 20 }}>
+                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 12, borderBottom: '2px solid var(--color-border-light)', paddingBottom: 4 }}>Order Items (Recipes)</h4>
+                  {detailItem.items.map((recipe, rIdx) => (
+                    <div key={rIdx} style={{ marginBottom: 16, padding: 12, backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: 8, border: '1px solid var(--color-border-light)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 4 }}>
+                        <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '0.875rem' }}>{recipe.recipeName}</span>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                          Servings: {recipe.servings} | Subtotal: {formatMoney(recipe.lineTotal)}
+                        </span>
+                      </div>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table className="data-table" style={{ fontSize: '0.75rem' }}>
+                          <thead>
+                            <tr style={{ backgroundColor: 'transparent' }}>
+                              <th style={{ padding: '4px 8px' }}>Ingredient</th>
+                              <th style={{ padding: '4px 8px' }}>Qty (Base)</th>
+                              <th style={{ padding: '4px 8px' }}>Unit</th>
+                              <th style={{ padding: '4px 8px' }}>Subtotal</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {recipe.ingredients && recipe.ingredients.map((ing, iIdx) => (
+                              <tr key={iIdx}>
+                                <td style={{ padding: '4px 8px', fontWeight: 500 }}>{ing.ingredientName}</td>
+                                <td style={{ padding: '4px 8px' }}>{ing.quantityBase}</td>
+                                <td style={{ padding: '4px 8px' }}>{ing.baseUnit}</td>
+                                <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatMoney(ing.lineTotal)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
