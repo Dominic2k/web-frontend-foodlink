@@ -134,7 +134,7 @@ export default function UsersPage() {
 
       {/* Filters */}
       <div className="users-toolbar card" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-        <div className="input-with-icon" style={{ maxWidth: 320, flex: '1 1 320px' }}>
+        <div className="input-with-icon" style={{ maxWidth: 360, flex: '1 1 360px' }}>
           <FiSearch className="input-icon" />
           <input
             className="input"
