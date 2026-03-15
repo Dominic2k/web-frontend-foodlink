@@ -3,6 +3,7 @@ import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { getErrorMessage } from '../utils/errorMessage';
+import './ManagementToolbar.css';
 
 export default function IngredientsPage() {
   const [items, setItems] = useState([]);
@@ -129,19 +130,23 @@ export default function IngredientsPage() {
         <button className="btn btn-primary" onClick={openCreate}><FiPlus /> Add New</button>
       </div>
 
-      <div className="card" style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-        <div className="input-with-icon" style={{ maxWidth: 280, flex: '1 1 280px' }}>
+      <div className="card management-toolbar">
+        <div className="input-with-icon toolbar-search" style={{ maxWidth: 360, flex: '1 1 360px' }}>
           <FiSearch className="input-icon" />
           <input className="input" placeholder="Search by name or category..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input" style={{ width: 180 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <button className="btn btn-outline" onClick={() => { setSearch(''); setStatusFilter(''); setPage(0); }}>
-          Reset Filters
-        </button>
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div className="toolbar-actions">
+          <button className="btn btn-outline" onClick={() => { setSearch(''); setStatusFilter(''); setPage(0); }}>
+            Reset Filters
+          </button>
+        </div>
       </div>
 
       <div className="card">

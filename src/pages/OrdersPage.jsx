@@ -3,6 +3,7 @@ import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { getErrorMessage } from '../utils/errorMessage';
+import './ManagementToolbar.css';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All' },
@@ -52,6 +53,22 @@ export default function OrdersPage() {
     } catch (e) { showToast(getErrorMessage(e, 'Failed to update order status'), 'error'); }
   };
 
+  const handleCancelOrder = async (id) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+    try {
+      await adminAPI.cancelOrder(id);
+      showToast('Order canceled successfully', 'success');
+      fetchData();
+      if (detailItem && detailItem.id === id) {
+        setDetailItem(prev => ({ ...prev, status: 'canceled' }));
+      }
+    } catch (e) {
+      showToast(getErrorMessage(e, 'Failed to cancel order'), 'error');
+    }
+  };
+
   const viewDetail = async (id) => {
     try {
       const res = await adminAPI.getOrderById(id);
@@ -72,11 +89,19 @@ export default function OrdersPage() {
         <p className="page-subtitle">Total {totalElements} orders</p>
       </div>
 
-      <div className="card" style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {STATUS_OPTIONS.map(s => (
-          <button key={s.value} className={`btn btn-sm ${statusFilter === s.value ? 'btn-primary' : 'btn-outline'}`}
-            onClick={() => setStatusFilter(s.value)}>{s.label}</button>
-        ))}
+      <div className="card management-toolbar">
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            {STATUS_OPTIONS.map(s => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="toolbar-actions">
+          <button className="btn btn-outline" onClick={() => setStatusFilter('')}>
+            Reset Filter
+          </button>
+        </div>
       </div>
 
       <div className="card">
@@ -114,8 +139,17 @@ export default function OrdersPage() {
                       </td>
                       <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>{formatDate(o.createdAt)}</td>
                       <td>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <button className="btn btn-ghost btn-icon" onClick={() => viewDetail(o.id)}><FiEye /></button>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                          <button className="btn btn-ghost btn-icon" onClick={() => viewDetail(o.id)}>
+                            <FiEye />
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleCancelOrder(o.id)}
+                            disabled={o.status === 'canceled'}
+                          >
+                            Cancel
+                          </button>
                         </div>
                       </td>
                     </tr>

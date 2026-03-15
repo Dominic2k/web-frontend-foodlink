@@ -3,6 +3,7 @@ import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiEye, FiX } from 'react-icons/fi';
 import { getErrorMessage } from '../utils/errorMessage';
+import './ManagementToolbar.css';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Status' },
@@ -242,23 +243,29 @@ export default function RecipesPage() {
         <button className="btn btn-primary" onClick={openCreate}><FiPlus /> Add New</button>
       </div>
 
-      <div className="card" style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div className="input-with-icon" style={{ maxWidth: 280, flex: '1 1 280px' }}>
+      <div className="card management-toolbar">
+        <div className="input-with-icon toolbar-search" style={{ maxWidth: 360, flex: '1 1 360px' }}>
           <FiSearch className="input-icon" />
           <input className="input" placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input" style={{ width: 180 }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
-        <select className="input" style={{ width: 180 }} value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+        </div>
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
           <option value="">All categories</option>
           {allCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
+        </div>
+        <div className="toolbar-actions">
         <button className="btn btn-outline" onClick={() => {
           setSearch(''); setStatusFilter(''); setCategoryFilter(''); setPage(0);
         }}>
           Reset Filters
         </button>
+        </div>
       </div>
 
       <div className="card">

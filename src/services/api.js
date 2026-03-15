@@ -75,6 +75,7 @@ export const adminAPI = {
     getOrderById: (id) => api.get(`/admin/orders/${id}`),
     updateOrderStatus: (id, status) =>
         api.put(`/admin/orders/${id}/status`, { status }),
+    cancelOrder: (id) => api.put(`/admin/orders/${id}/cancel`),
 
   // Health Conditions
   getHealthConditions: (params) => api.get('/admin/health-conditions', { params }),
