@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiEye, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { getErrorMessage } from '../utils/errorMessage';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All' },
@@ -48,7 +49,7 @@ export default function OrdersPage() {
       if (detailItem && detailItem.id === id) {
         setDetailItem(prev => ({ ...prev, status: newStatus }));
       }
-    } catch (e) { showToast('Update failed', 'error'); }
+    } catch (e) { showToast(getErrorMessage(e, 'Failed to update order status'), 'error'); }
   };
 
   const viewDetail = async (id) => {

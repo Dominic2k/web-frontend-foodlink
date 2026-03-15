@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export default function IngredientsPage() {
   const [items, setItems] = useState([]);
@@ -86,7 +87,12 @@ export default function IngredientsPage() {
       }
       setShowModal(false);
       fetchData();
-    } catch (e) { showToast('Action failed', 'error'); }
+    } catch (e) {
+      showToast(
+        getErrorMessage(e, editing ? 'Failed to update ingredient' : 'Failed to create ingredient'),
+        'error'
+      );
+    }
     finally { setSaving(false); }
   };
 
@@ -94,9 +100,11 @@ export default function IngredientsPage() {
     if (!window.confirm('Are you sure you want to delete this ingredient?')) return;
     try {
       await adminAPI.deleteIngredient(id);
-      showToast('Deleted', 'success');
+      showToast('Deleted successfully', 'success');
       fetchData();
-    } catch (e) { showToast('Delete failed', 'error'); }
+    } catch (e) {
+      showToast(getErrorMessage(e, 'Failed to delete ingredient'), 'error');
+    }
   };
 
   const inp = (label, key, type = 'text') => (

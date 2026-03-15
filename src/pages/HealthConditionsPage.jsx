@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiActivity, FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export default function HealthConditionsPage() {
   const [items, setItems] = useState([]);
@@ -71,8 +72,10 @@ export default function HealthConditionsPage() {
       setShowModal(false);
       fetchData();
     } catch (err) {
-      const msg = err.response?.data?.message || 'Action failed';
-      showToast(msg, 'error');
+      showToast(
+        getErrorMessage(err, editing ? 'Failed to update health condition' : 'Failed to create health condition'),
+        'error'
+      );
     } finally {
       setSaving(false);
     }
@@ -85,7 +88,7 @@ export default function HealthConditionsPage() {
       showToast('Deleted successfully', 'success');
       fetchData();
     } catch (err) {
-      showToast('Delete failed', 'error');
+      showToast(getErrorMessage(err, 'Failed to delete health condition'), 'error');
     }
   };
 

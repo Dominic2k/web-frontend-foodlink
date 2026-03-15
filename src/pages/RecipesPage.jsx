@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiEye, FiX } from 'react-icons/fi';
+import { getErrorMessage } from '../utils/errorMessage';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Status' },
@@ -183,7 +184,12 @@ export default function RecipesPage() {
       }
       setShowModal(false);
       fetchData();
-    } catch (e) { showToast('Action failed', 'error'); }
+    } catch (e) {
+      showToast(
+        getErrorMessage(e, editing ? 'Failed to update recipe' : 'Failed to create recipe'),
+        'error'
+      );
+    }
     finally { setSaving(false); }
   };
 
@@ -194,14 +200,13 @@ export default function RecipesPage() {
       setShowDeleteConfirm(null);
       fetchData();
     } catch (e) {
-      const msg = e.response?.data?.message || 'Delete failed';
-      showToast(msg, 'error');
+      showToast(getErrorMessage(e, 'Failed to delete recipe'), 'error');
     }
   };
 
   const handleStatusChange = async (id, newStatus) => {
     try { await adminAPI.updateRecipeStatus(id, newStatus); showToast('Status updated successfully', 'success'); fetchData(); }
-    catch (e) { showToast('Failed', 'error'); }
+    catch (e) { showToast(getErrorMessage(e, 'Failed to update recipe status'), 'error'); }
   };
 
   const viewDetail = async (id) => {
@@ -209,7 +214,10 @@ export default function RecipesPage() {
       const res = await adminAPI.getRecipeById(id);
       setDetailItem(res.data.data);
       setShowFullInstructions(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      showToast(getErrorMessage(e, 'Failed to load recipe details'), 'error');
+    }
   };
 
   const inp = (label, key, type = 'text') => (

@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fi';
 import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export default function DishCategoriesPage() {
   const [items, setItems] = useState([]);
@@ -101,8 +102,10 @@ export default function DishCategoriesPage() {
       setShowModal(false);
       fetchData();
     } catch (err) {
-      const msg = err.response?.data?.message || 'Action failed';
-      showToast(msg, 'error');
+      showToast(
+        getErrorMessage(err, editing ? 'Failed to update dish category' : 'Failed to create dish category'),
+        'error'
+      );
     } finally {
       setSaving(false);
     }
@@ -116,8 +119,7 @@ export default function DishCategoriesPage() {
       setConfirmDeactivateItem(null);
       fetchData();
     } catch (err) {
-      const msg = err.response?.data?.message || 'Deactivate failed';
-      showToast(msg, 'error');
+      showToast(getErrorMessage(err, 'Failed to deactivate dish category'), 'error');
     }
   };
 

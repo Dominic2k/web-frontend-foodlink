@@ -3,6 +3,7 @@ import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiEye, FiShield, FiShieldOff, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import UserDetailModal from '../components/UserDetailModal';
+import { getErrorMessage } from '../utils/errorMessage';
 import './UsersPage.css';
 
 export default function UsersPage() {
@@ -63,7 +64,15 @@ export default function UsersPage() {
       );
       fetchUsers();
     } catch (err) {
-      showToast('Action failed', 'error');
+      showToast(
+        getErrorMessage(
+          err,
+          newStatus === 'blocked'
+            ? `Failed to block ${user.fullName}`
+            : `Failed to unblock ${user.fullName}`
+        ),
+        'error'
+      );
     } finally {
       setActionLoading(null);
     }
