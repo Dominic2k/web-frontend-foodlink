@@ -13,7 +13,14 @@ export default function HealthConditionsPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ code: '', name: '' });
+  const [form, setForm] = useState({
+    code: '',
+    name: '',
+    description: '',
+    dietaryAdvice: '',
+    exerciseAdvice: '',
+    imageUrl: ''
+  });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -48,13 +55,27 @@ export default function HealthConditionsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ code: '', name: '' });
+    setForm({
+      code: '',
+      name: '',
+      description: '',
+      dietaryAdvice: '',
+      exerciseAdvice: '',
+      imageUrl: ''
+    });
     setShowModal(true);
   };
 
   const openEdit = (item) => {
     setEditing(item);
-    setForm({ code: item.code || '', name: item.name || '' });
+    setForm({
+      code: item.code || '',
+      name: item.name || '',
+      description: item.description || '',
+      dietaryAdvice: item.dietaryAdvice || '',
+      exerciseAdvice: item.exerciseAdvice || '',
+      imageUrl: item.imageUrl || ''
+    });
     setShowModal(true);
   };
 
@@ -134,6 +155,7 @@ export default function HealthConditionsPage() {
                     <th style={{ width: 60 }}>#</th>
                     <th>Code</th>
                     <th>Condition Name</th>
+                    <th>Description</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -145,6 +167,9 @@ export default function HealthConditionsPage() {
                         <span className="badge badge-primary">{c.code || '—'}</span>
                       </td>
                       <td style={{ fontWeight: 500 }}>{c.name}</td>
+                      <td style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', maxWidth: 300 }} className="text-truncate">
+                        {c.description || '—'}
+                      </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button className="btn btn-ghost btn-icon" onClick={() => openEdit(c)}>
@@ -184,34 +209,88 @@ export default function HealthConditionsPage() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editing ? 'Edit Health Condition' : 'Add Health Condition'}</h3>
               <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                    Code *
+                  </label>
+                  <input
+                    className="input"
+                    value={form.code}
+                    onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))}
+                    placeholder="e.g. DIABETES"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                    Name *
+                  </label>
+                  <input
+                    className="input"
+                    value={form.name}
+                    onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="e.g. Diabetes Mellitus"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-                  Code *
+                  Description
+                </label>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 80, resize: 'vertical' }}
+                  value={form.description}
+                  onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="General description of the condition..."
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                  Dietary Advice
+                </label>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 80, resize: 'vertical' }}
+                  value={form.dietaryAdvice}
+                  onChange={(e) => setForm(f => ({ ...f, dietaryAdvice: e.target.value }))}
+                  placeholder="Foods to eat, foods to avoid..."
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                  Exercise & Lifestyle Advice
+                </label>
+                <textarea
+                  className="input"
+                  style={{ minHeight: 80, resize: 'vertical' }}
+                  value={form.exerciseAdvice}
+                  onChange={(e) => setForm(f => ({ ...f, exerciseAdvice: e.target.value }))}
+                  placeholder="Physical activities and habits..."
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                  Image URL
                 </label>
                 <input
                   className="input"
-                  value={form.code}
-                  onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))}
-                  placeholder="e.g. DIABETES"
+                  value={form.imageUrl}
+                  onChange={(e) => setForm(f => ({ ...f, imageUrl: e.target.value }))}
+                  placeholder="https://example.com/image.jpg"
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-                  Name *
-                </label>
-                <input
-                  className="input"
-                  value={form.name}
-                  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Diabetes Mellitus"
-                />
-              </div>
+
               <button
                 className="btn btn-primary"
                 onClick={handleSave}
