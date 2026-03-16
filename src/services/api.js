@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -59,6 +59,7 @@ export const adminAPI = {
     getIngredientById: (id) => api.get(`/admin/ingredients/${id}`),
     createIngredient: (data) => api.post("/admin/ingredients", data),
     updateIngredient: (id, data) => api.put(`/admin/ingredients/${id}`, data),
+    receiveIngredientStock: (id, data) => api.post(`/admin/ingredients/${id}/receive`, data),
     deleteIngredient: (id) => api.delete(`/admin/ingredients/${id}`),
 
     // Recipes
