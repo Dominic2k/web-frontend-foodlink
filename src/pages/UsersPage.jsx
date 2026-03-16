@@ -5,6 +5,7 @@ import { FiSearch, FiEye, FiShield, FiShieldOff, FiChevronLeft, FiChevronRight }
 import UserDetailModal from '../components/UserDetailModal';
 import { getErrorMessage } from '../utils/errorMessage';
 import './UsersPage.css';
+import './ManagementToolbar.css';
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -133,8 +134,8 @@ export default function UsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="users-toolbar card" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-        <div className="input-with-icon" style={{ maxWidth: 360, flex: '1 1 360px' }}>
+      <div className="card management-toolbar">
+        <div className="input-with-icon toolbar-search" style={{ maxWidth: 360, flex: '1 1 360px' }}>
           <FiSearch className="input-icon" />
           <input
             className="input"
@@ -143,24 +144,33 @@ export default function UsersPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <select className="input" style={{ width: 180 }} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-          <option value="">All roles</option>
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-        </select>
-        <select className="input" style={{ width: 180 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="blocked">Blocked</option>
-        </select>
-        <button className="btn btn-outline" onClick={() => {
-          setSearch('');
-          setRoleFilter('');
-          setStatusFilter('');
-          setPage(0);
-        }}>
-          Reset Filters
-        </button>
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+            <option value="">All roles</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </div>
+        <div className="toolbar-actions">
+          <button
+            className="btn btn-outline"
+            onClick={() => {
+              setSearch('');
+              setRoleFilter('');
+              setStatusFilter('');
+              setPage(0);
+            }}
+          >
+            Reset Filters
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -227,6 +237,7 @@ export default function UsersPage() {
                         <div className="user-actions">
                           <button
                             className="btn btn-ghost btn-icon"
+                            style={{ color: 'var(--color-text)' }}
                             title="View details"
                             onClick={() => setSelectedUser(u)}
                           >
