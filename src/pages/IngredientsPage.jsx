@@ -9,6 +9,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiPackage,
+  FiX,
 } from 'react-icons/fi';
 import { getErrorMessage } from '../utils/errorMessage';
 import './ManagementToolbar.css';
@@ -383,7 +384,7 @@ export default function IngredientsPage() {
             <div className="modal-header">
               <h3>{editing ? 'Edit Ingredient' : 'Add New Ingredient'}</h3>
               <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>
-                âœ•
+                <FiX />
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -435,7 +436,7 @@ export default function IngredientsPage() {
                   setReceivingItem(null);
                 }}
               >
-                âœ•
+                <FiX />
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
