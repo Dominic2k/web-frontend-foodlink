@@ -196,6 +196,27 @@ export default function DashboardPage() {
     { name: 'Pending', value: pendingOrders, color: '#ff9800' },
   ];
 
+  const renderNote = (items) => (
+    <div
+      style={{
+        marginBottom: 12,
+        fontSize: '0.8125rem',
+        color: 'var(--color-text-secondary)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        alignItems: 'flex-start',
+      }}
+    >
+      {items.map((it) => (
+        <span key={it.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: it.color, display: 'inline-block' }} />
+          <span>{it.name}: {it.value}</span>
+        </span>
+      ))}
+    </div>
+  );
+
   // Daily activity chart data
   const dailyActivityData = (stats?.dailyActivities || []).map(d => ({
     date: d.date,
@@ -281,7 +302,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
                 <YAxis tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Area
                   type="monotone"
                   dataKey="users"
@@ -301,6 +322,7 @@ export default function DashboardPage() {
             <h3>👥 User Status</h3>
           </div>
           <div className="card-body chart-body">
+            {renderNote(pieData)}
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
@@ -316,7 +338,7 @@ export default function DashboardPage() {
                     <Cell key={index} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Legend
                   verticalAlign="bottom"
                   iconType="circle"
@@ -344,7 +366,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Area
                   type="monotone"
                   dataKey="actions"
@@ -364,6 +386,7 @@ export default function DashboardPage() {
             <h3>🛒 Order Status</h3>
           </div>
           <div className="card-body chart-body">
+            {renderNote(orderDonutData)}
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
@@ -379,7 +402,7 @@ export default function DashboardPage() {
                     <Cell key={index} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Legend
                   verticalAlign="bottom"
                   iconType="circle"
@@ -407,7 +430,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Area
                   type="monotone"
                   dataKey="visits"
