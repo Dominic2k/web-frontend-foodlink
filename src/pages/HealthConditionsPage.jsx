@@ -22,6 +22,7 @@ export default function HealthConditionsPage() {
     imageUrl: ''
   });
   const [saving, setSaving] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
   const [toast, setToast] = useState(null);
 
   const fetchData = useCallback(async () => {
@@ -110,6 +111,23 @@ export default function HealthConditionsPage() {
       fetchData();
     } catch (err) {
       showToast(getErrorMessage(err, 'Failed to delete health condition'), 'error');
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const res = await adminAPI.uploadHealthConditionImage(file);
+      const url = res.data.data;
+      setForm(f => ({ ...f, imageUrl: url }));
+      showToast('Image uploaded successfully', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Failed to upload image'), 'error');
+    } finally {
+      setUploadingImg(false);
+      e.target.value = null; // reset input
     }
   };
 
@@ -279,16 +297,24 @@ export default function HealthConditionsPage() {
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-                  Image URL
-                </label>
-                <input
-                  className="input"
-                  value={form.imageUrl}
-                  onChange={(e) => setForm(f => ({ ...f, imageUrl: e.target.value }))}
-                  placeholder="https://example.com/image.jpg"
-                />
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                    Image URL
+                  </label>
+                  <input
+                    className="input"
+                    value={form.imageUrl}
+                    onChange={(e) => setForm(f => ({ ...f, imageUrl: e.target.value }))}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                <div style={{ marginBottom: 4 }}>
+                  <input type="file" id="healthConditionImageUpload" style={{ display: 'none' }} accept="image/*" onChange={handleImageUpload} />
+                  <button type="button" className="btn btn-outline" style={{ height: 38 }} onClick={(e) => { e.preventDefault(); document.getElementById('healthConditionImageUpload').click(); }} disabled={uploadingImg}>
+                    {uploadingImg ? 'Uploading...' : 'Upload Image'}
+                  </button>
+                </div>
               </div>
 
               <button

@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -66,6 +66,13 @@ export const adminAPI = {
     getRecipes: (params) => api.get("/admin/recipes", { params }),
     getRecipeById: (id) => api.get(`/admin/recipes/${id}`),
     createRecipe: (data) => api.post("/admin/recipes", data),
+    uploadRecipeImage: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return api.post("/admin/recipes/upload-image", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+    },
     updateRecipe: (id, data) => api.put(`/admin/recipes/${id}`, data),
     updateRecipeStatus: (id, status) =>
         api.put(`/admin/recipes/${id}/status`, { status }),
@@ -81,6 +88,13 @@ export const adminAPI = {
   // Health Conditions
   getHealthConditions: (params) => api.get('/admin/health-conditions', { params }),
   createHealthCondition: (data) => api.post('/admin/health-conditions', data),
+  uploadHealthConditionImage: (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return api.post("/admin/health-conditions/upload-image", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+      });
+  },
   updateHealthCondition: (id, data) => api.put(`/admin/health-conditions/${id}`, data),
   deleteHealthCondition: (id) => api.delete(`/admin/health-conditions/${id}`),
 
