@@ -33,6 +33,7 @@ export default function RecipesPage() {
     baseServings: '1', imageUrl: '', status: 'draft', ingredients: [],
   });
   const [saving, setSaving] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
   const [toast, setToast] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null); // stores recipe ID to delete
   const [allIngredients, setAllIngredients] = useState([]);
@@ -221,6 +222,23 @@ export default function RecipesPage() {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const res = await adminAPI.uploadRecipeImage(file);
+      const url = res.data.data;
+      setForm(f => ({ ...f, imageUrl: url }));
+      showToast('Image uploaded successfully', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Failed to upload image'), 'error');
+    } finally {
+      setUploadingImg(false);
+      e.target.value = null; // reset input
+    }
+  };
+
   const inp = (label, key, type = 'text') => (
     <div style={{ flex: 1 }}>
       <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>{label}</label>
@@ -363,7 +381,15 @@ export default function RecipesPage() {
                 {inp('Cook Time (min)', 'cookTimeMin', 'number')}
                 {inp('Servings', 'baseServings', 'number')}
               </div>
-              {inp('Image URL', 'imageUrl')}
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>{inp('Image URL', 'imageUrl')}</div>
+                <div style={{ marginBottom: 4 }}>
+                  <input type="file" id="recipeImageUpload" style={{ display: 'none' }} accept="image/*" onChange={handleImageUpload} />
+                  <button type="button" className="btn btn-outline" style={{ height: 38 }} onClick={(e) => { e.preventDefault(); document.getElementById('recipeImageUpload').click(); }} disabled={uploadingImg}>
+                    {uploadingImg ? 'Uploading...' : 'Upload Image'}
+                  </button>
+                </div>
+              </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>Status</label>
                 <select className="input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
