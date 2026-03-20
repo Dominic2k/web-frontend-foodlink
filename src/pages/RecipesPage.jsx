@@ -110,7 +110,7 @@ export default function RecipesPage() {
         ingredients,
         categoryIds: (detail.categories || []).map(c => c.id),
       });
-    } catch (e) {
+    } catch {
       // fallback to basic info
       setForm({
         name: item.name || '', description: item.description || '', instructions: item.instructions || '',
@@ -330,7 +330,7 @@ export default function RecipesPage() {
                     <th>Giá/khẩu phần</th>
                     <th>Ingredients</th>
                     <th>Status</th>
-                    <th>Created By</th>
+                    <th>Average Rating</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -367,7 +367,11 @@ export default function RecipesPage() {
                           <option value="archived">Archived</option>
                         </select>
                       </td>
-                      <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>{r.createdByEmail || '-'}</td>
+                      <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                        {r.ratingSummary?.totalRatings
+                          ? `${r.ratingSummary.averageRating}/5 (${r.ratingSummary.totalRatings})`
+                          : 'No ratings yet'}
+                      </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button className="btn btn-ghost btn-icon" onClick={() => viewDetail(r.id)}><FiEye /></button>
@@ -587,30 +591,172 @@ export default function RecipesPage() {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-                {detailItem.prepTimeMin && (
-                  <div style={{ fontSize: '0.8125rem' }}>
-                    <span style={{ fontWeight: 600 }}>Prep:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{detailItem.prepTimeMin} min</span>
+              <div style={{ display: 'grid', gap: 12, marginBottom: 18 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+                  {[
+                    { label: 'Prep', value: detailItem.prepTimeMin ? `${detailItem.prepTimeMin} min` : '-' },
+                    { label: 'Cook', value: detailItem.cookTimeMin ? `${detailItem.cookTimeMin} min` : '-' },
+                    { label: 'Servings', value: detailItem.baseServings || '-' },
+                  ].map((meta) => (
+                    <div
+                      key={meta.label}
+                      style={{
+                        border: '1px solid var(--color-border-light)',
+                        borderRadius: 12,
+                        padding: '10px 12px',
+                        background: 'rgba(0, 0, 0, 0.02)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color: 'var(--color-text-muted)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          marginBottom: 4,
+                        }}
+                      >
+                        {meta.label}
+                      </div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)' }}>{meta.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                  <div
+                    style={{
+                      border: '1px solid var(--color-border-light)',
+                      borderRadius: 12,
+                      padding: 14,
+                      background: '#FFFDFC',
+                    }}
+                  >
+                    <h4
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        marginBottom: 10,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        color: 'var(--color-text-muted)',
+                      }}
+                    >
+                      Recipe Meta
+                    </h4>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {[
+                        ['Created by', detailItem.createdByEmail || '-'],
+                        ['Created at', detailItem.createdAt ? new Date(detailItem.createdAt).toLocaleString('vi-VN') : '-'],
+                        ['Ingredient cost', formatMoney(detailItem.totalIngredientPrice)],
+                        ['Price / serving', formatMoney(detailItem.pricePerServing)],
+                      ].map(([label, value]) => (
+                        <div
+                          key={label}
+                          style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}
+                        >
+                          <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>{label}</span>
+                          <span
+                            style={{
+                              fontSize: '0.88rem',
+                              fontWeight: 600,
+                              color: 'var(--color-text)',
+                              textAlign: 'right',
+                            }}
+                          >
+                            {value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                )}
-                {detailItem.cookTimeMin && (
-                  <div style={{ fontSize: '0.8125rem' }}>
-                    <span style={{ fontWeight: 600 }}>Cook:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{detailItem.cookTimeMin} min</span>
+
+                  <div
+                    style={{
+                      border: '1px solid #F0D9D5',
+                      borderRadius: 12,
+                      padding: 14,
+                      background: '#FFF8F6',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 128,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        color: '#A05A4A',
+                      }}
+                    >
+                      Dish Ratings
+                    </div>
+                    {detailItem.ratingSummary?.totalRatings ? (
+                      <div>
+                        <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#7C2D12', lineHeight: 1 }}>
+                          {detailItem.ratingSummary.averageRating}
+                          <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>/5</span>
+                        </div>
+                        <div style={{ marginTop: 6, fontSize: '0.82rem', color: '#9A3412' }}>
+                          {detailItem.ratingSummary.totalRatings} rating{detailItem.ratingSummary.totalRatings > 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.88rem', color: 'var(--color-text-secondary)' }}>
+                        No ratings yet
+                      </div>
+                    )}
                   </div>
-                )}
-                {detailItem.baseServings && (
-                  <div style={{ fontSize: '0.8125rem' }}>
-                    <span style={{ fontWeight: 600 }}>Servings:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{detailItem.baseServings}</span>
-                  </div>
-                )}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+
+              <div style={{ display: 'none' }}>
+                <div style={{ fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 600 }}>Created by:</span>{' '}
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{detailItem.createdByEmail || '—'}</span>
+                </div>
+                <div style={{ fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 600 }}>Created at:</span>{' '}
+                  <span style={{ color: 'var(--color-text-secondary)' }}>
+                    {detailItem.createdAt ? new Date(detailItem.createdAt).toLocaleString('vi-VN') : '—'}
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'none' }}>
                 <div style={{ fontSize: '0.8125rem' }}>
                   <span style={{ fontWeight: 600 }}>Total ingredient cost:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(detailItem.totalIngredientPrice)}</span>
                 </div>
                 <div style={{ fontSize: '0.8125rem' }}>
                   <span style={{ fontWeight: 600 }}>Price per serving:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(detailItem.pricePerServing)}</span>
                 </div>
+              </div>
+
+              <div style={{ display: 'none' }}>
+                <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Dish Ratings</h4>
+                {detailItem.ratingSummary?.totalRatings ? (
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: '0.8125rem' }}>
+                      <span style={{ fontWeight: 600 }}>Average rating:</span>{' '}
+                      <span style={{ color: 'var(--color-text-secondary)' }}>
+                        {detailItem.ratingSummary.averageRating}/5
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8125rem' }}>
+                      <span style={{ fontWeight: 600 }}>Total ratings:</span>{' '}
+                      <span style={{ color: 'var(--color-text-secondary)' }}>
+                        {detailItem.ratingSummary.totalRatings}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', margin: 0 }}>
+                    No ratings yet
+                  </p>
+                )}
               </div>
 
               {detailItem.instructions && (
