@@ -8,7 +8,7 @@ import {
   FiTrash2,
   FiChevronLeft,
   FiChevronRight,
-  FiPackage,
+  FiEye,
   FiX,
 } from 'react-icons/fi';
 import { getErrorMessage } from '../utils/errorMessage';
@@ -48,12 +48,8 @@ export default function IngredientsPage() {
   });
   const [saving, setSaving] = useState(false);
 
-  const [showReceiveModal, setShowReceiveModal] = useState(false);
-  const [receivingItem, setReceivingItem] = useState(null);
-  const [receiveForm, setReceiveForm] = useState({ quantityBase: '', receivedDate: '' });
-  const [receiving, setReceiving] = useState(false);
-
   const [toast, setToast] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -130,12 +126,6 @@ export default function IngredientsPage() {
     setShowModal(true);
   };
 
-  const openReceive = (item) => {
-    setReceivingItem(item);
-    setReceiveForm({ quantityBase: '', receivedDate: '' });
-    setShowReceiveModal(true);
-  };
-
   const handleSave = async () => {
     if (!form.name.trim()) {
       showToast('Ingredient name is required', 'error');
@@ -148,6 +138,31 @@ export default function IngredientsPage() {
     if (!form.baseUnit.trim()) {
       showToast('Base unit is required', 'error');
       return;
+    }
+    const price = Number(form.pricePerBaseUnit);
+    if (Number.isNaN(price) || price <= 0) {
+      showToast('Price must be greater than 0', 'error');
+      return;
+    }
+    const stock = Number(form.stockQuantityBase ?? 0);
+    if (Number.isNaN(stock) || stock < 0) {
+      showToast('Stock quantity must be 0 or greater', 'error');
+      return;
+    }
+    const numericFields = [
+      { key: 'caloriesPer100', label: 'Calories per 100' },
+      { key: 'proteinGPer100', label: 'Protein per 100' },
+      { key: 'carbGPer100', label: 'Carb per 100' },
+      { key: 'fatGPer100', label: 'Fat per 100' },
+    ];
+    for (const f of numericFields) {
+      const raw = form[f.key];
+      if (raw === '' || raw == null) continue;
+      const val = Number(raw);
+      if (Number.isNaN(val) || val < 0) {
+        showToast(`${f.label} must be 0 or greater`, 'error');
+        return;
+      }
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -193,29 +208,6 @@ export default function IngredientsPage() {
     }
   };
 
-  const handleReceive = async () => {
-    if (!receivingItem) return;
-    if (receiveForm.quantityBase === '' || Number(receiveForm.quantityBase) <= 0) return;
-
-    setReceiving(true);
-    const payload = {
-      quantityBase: Number(receiveForm.quantityBase),
-      receivedDate: receiveForm.receivedDate ? receiveForm.receivedDate : null,
-    };
-
-    try {
-      await adminAPI.receiveIngredientStock(receivingItem.id, payload);
-      showToast('Stock received successfully', 'success');
-      setShowReceiveModal(false);
-      setReceivingItem(null);
-      fetchData();
-    } catch (e) {
-      showToast(getErrorMessage(e, 'Failed to receive stock'), 'error');
-    } finally {
-      setReceiving(false);
-    }
-  };
-
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this ingredient?')) return;
     try {
@@ -258,7 +250,7 @@ export default function IngredientsPage() {
     if (!status) return <span className="badge badge-info">Chưa có HSD</span>;
     const m = EXP_STATUS_BADGE[status];
     if (!m) return <span className="badge badge-info">{status}</span>;
-    return <span className={`badge ${m.cls}`}>{m.label}</span>;
+    return <span className={`badge ${m.cls}`} style={{ color: '#000' }}>{m.label}</span>;
   };
 
   return (
@@ -318,21 +310,14 @@ export default function IngredientsPage() {
         ) : (
           <>
             <div style={{ overflowX: 'auto', position: 'relative', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
-              <table className="data-table" style={{ minWidth: 1400 }}>
+              <table className="data-table">
                 <thead>
                   <tr>
+                    <th>Image</th>
                     <th>Name</th>
                     <th>Category</th>
-                    <th>Base Unit</th>
                     <th>Price/Unit</th>
                     <th>Stock</th>
-                    <th>Received</th>
-                    <th>Expiration</th>
-                    <th>Exp. Status</th>
-                    <th>Cal/100</th>
-                    <th>Protein</th>
-                    <th>Carb</th>
-                    <th>Fat</th>
                     <th>Status</th>
                     <th style={{ textAlign: 'right', position: 'sticky', right: 0, background: 'var(--color-bg)', zIndex: 2 }}>Actions</th>
                   </tr>
@@ -340,27 +325,16 @@ export default function IngredientsPage() {
                 <tbody>
                   {items.map((i) => (
                     <tr key={i.id}>
+                      <td>{i.imageUrl ? <img src={i.imageUrl} alt={i.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--color-border-light)' }} /> : '-'}</td>
                       <td style={{ fontWeight: 600 }}>{i.name}</td>
-                      <td>
-                        <span className="badge badge-info">{i.category || '-'}</span>
-                      </td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{i.baseUnit || '-'}</td>
+                      <td><span className="badge badge-info">{i.category || '-'}</span></td>
                       <td style={{ color: 'var(--color-text-secondary)', fontWeight: 600 }}>{formatMoney(i.pricePerBaseUnit)}</td>
                       <td style={{ color: 'var(--color-text-secondary)' }}>{i.stockQuantityBase}</td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{i.receivedDate || '-'}</td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{i.expirationDate || '-'}</td>
-                      <td>{expBadge(i.expirationStatus)}</td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{i.caloriesPer100 ?? '-'}</td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{i.proteinGPer100 ?? '-'}</td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{i.carbGPer100 ?? '-'}</td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{i.fatGPer100 ?? '-'}</td>
-                      <td>
-                        <span className={`badge ${i.isActive ? 'badge-success' : 'badge-danger'}`}>{i.isActive ? 'Active' : 'Inactive'}</span>
-                      </td>
-                      <td style={{ position: 'sticky', right: 0, background: 'var(--color-surface)', zIndex: 3, borderLeft: '1px solid var(--color-border-light)', boxShadow: '-6px 0 12px rgba(0,0,0,0.08)' }}>
+                      <td><span className={`badge ${i.isActive ? 'badge-success' : 'badge-danger'}`}>{i.isActive ? 'Active' : 'Inactive'}</span></td>
+                      <td style={{ position: 'sticky', right: 0, background: 'var(--color-surface)', zIndex: 3, borderLeft: 'none', boxShadow: 'none' }}>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                          <button className="btn btn-ghost btn-icon" style={{ color: 'var(--color-text)' }} title="Receive stock" onClick={() => openReceive(i)}>
-                            <FiPackage />
+                          <button className="btn btn-ghost btn-icon" style={{ color: 'var(--color-text)' }} title="View detail" onClick={() => setDetailItem(i)}>
+                            <FiEye />
                           </button>
                           <button className="btn btn-ghost btn-icon" style={{ color: 'var(--color-text)' }} title="Edit" onClick={() => openEdit(i)}>
                             <FiEdit2 />
@@ -439,61 +413,40 @@ export default function IngredientsPage() {
         </div>
       )}
 
-      {/* Receive Stock Modal */}
-      {showReceiveModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => {
-            setShowReceiveModal(false);
-            setReceivingItem(null);
-          }}
-        >
-          <div className="modal-content" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+      {/* Detail Modal */}
+      {detailItem && (
+        <div className="modal-overlay" onClick={() => setDetailItem(null)}>
+          <div className="modal-content" style={{ maxWidth: 720 }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Receive Stock</h3>
-              <button
-                className="btn btn-ghost btn-icon"
-                onClick={() => {
-                  setShowReceiveModal(false);
-                  setReceivingItem(null);
-                }}
-              >
+              <h3>Ingredient Detail</h3>
+              <button className="btn btn-ghost btn-icon" onClick={() => setDetailItem(null)}>
                 <FiX />
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-                Ingredient: <span style={{ fontWeight: 700, color: 'var(--color-text)' }}>{receivingItem?.name}</span>
-              </div>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-                    Quantity ({receivingItem?.baseUnit || 'base'}) *
-                  </label>
-                  <input
-                    className="input"
-                    type="number"
-                    value={receiveForm.quantityBase}
-                    onChange={(e) => setReceiveForm((f) => ({ ...f, quantityBase: e.target.value }))}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-                    Received Date
-                  </label>
-                  <input
-                    className="input"
-                    type="date"
-                    value={receiveForm.receivedDate}
-                    onChange={(e) => setReceiveForm((f) => ({ ...f, receivedDate: e.target.value }))}
-                  />
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                {detailItem.imageUrl ? (
+                  <img src={detailItem.imageUrl} alt={detailItem.name} style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--color-border-light)' }} />
+                ) : (
+                  <div style={{ width: 120, height: 120, borderRadius: 12, border: '1px dashed var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)' }}>No image</div>
+                )}
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+                  <DetailRow label="Name" value={detailItem.name} />
+                  <DetailRow label="Category" value={detailItem.category || '-'} />
+                  <DetailRow label="Base Unit" value={detailItem.baseUnit || '-'} />
+                  <DetailRow label="Price/Unit" value={formatMoney(detailItem.pricePerBaseUnit)} />
+                  <DetailRow label="Stock" value={detailItem.stockQuantityBase} />
+                  <DetailRow label="Expiration Date" value={detailItem.expirationDate || '-'} />
+                  <DetailRow label="Received Date" value={detailItem.receivedDate || '-'} />
+                  <DetailRow label="Status" value={detailItem.isActive ? 'Active' : 'Inactive'} />
+                  <DetailRow label="Expiration Status" value={detailItem.expirationStatus || '-'} />
                 </div>
               </div>
-              <button className="btn btn-primary" onClick={handleReceive} disabled={receiving} style={{ marginTop: 8 }}>
-                {receiving ? <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></div> : 'Receive'}
-              </button>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                Note: System will reject receiving stock if the ingredient is already expired.
+              <div style={{ borderTop: '1px solid var(--color-border-light)', paddingTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
+                <DetailRow label="Calories/100" value={detailItem.caloriesPer100 ?? '-'} />
+                <DetailRow label="Protein/100" value={detailItem.proteinGPer100 ?? '-'} />
+                <DetailRow label="Carb/100" value={detailItem.carbGPer100 ?? '-'} />
+                <DetailRow label="Fat/100" value={detailItem.fatGPer100 ?? '-'} />
               </div>
             </div>
           </div>
@@ -501,6 +454,15 @@ export default function IngredientsPage() {
       )}
 
       <Toast toast={toast} />
+    </div>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, fontSize: '0.9rem' }}>
+      <span style={{ color: 'var(--color-text-muted)', minWidth: 110 }}>{label}:</span>
+      <span style={{ color: 'var(--color-text)' }}>{value}</span>
     </div>
   );
 }

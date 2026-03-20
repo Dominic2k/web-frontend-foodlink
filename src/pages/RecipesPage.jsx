@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiEye, FiX } from 'react-icons/fi';
@@ -272,7 +272,7 @@ export default function RecipesPage() {
   );
 
   const formatMoney = (value) => {
-    if (value == null || value === '') return '—';
+    if (value == null || value === '') return 'â€”';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value);
   };
 
@@ -320,12 +320,24 @@ export default function RecipesPage() {
           <>
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
-                <thead><tr>
-                  <th>Name</th><th>Categories</th><th>Time</th><th>Servings</th><th>Giá/khẩu phần</th><th>Ingredients</th><th>Status</th><th>Created By</th><th style={{ textAlign: 'right' }}>Actions</th>
-                </tr></thead>
+                <thead>
+                  <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Categories</th>
+                    <th>Time</th>
+                    <th>Servings</th>
+                    <th>Giá/khẩu phần</th>
+                    <th>Ingredients</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {items.map(r => (
                     <tr key={r.id}>
+                      <td>{r.imageUrl ? <img src={r.imageUrl} alt={r.name} style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, border: "1px solid var(--color-border-light)" }} /> : "-"}</td>
                       <td style={{ fontWeight: 600 }}>{r.name}</td>
                       <td>
                         {r.categories && r.categories.length > 0 ? (
@@ -334,13 +346,13 @@ export default function RecipesPage() {
                               <span key={c.id} className="badge badge-info" style={{ fontSize: '0.7rem' }}>{c.name}</span>
                             ))}
                           </div>
-                        ) : <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>—</span>}
+                        ) : <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>-</span>}
                       </td>
                       <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
                         {r.prepTimeMin ? `${r.prepTimeMin}' prep` : ''}{r.prepTimeMin && r.cookTimeMin ? ' + ' : ''}{r.cookTimeMin ? `${r.cookTimeMin}' cook` : ''}
-                        {!r.prepTimeMin && !r.cookTimeMin && '—'}
+                        {!r.prepTimeMin && !r.cookTimeMin && '-'}
                       </td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{r.baseServings || '—'}</td>
+                      <td style={{ color: 'var(--color-text-secondary)' }}>{r.baseServings || '-'}</td>
                       <td style={{ color: 'var(--color-text-secondary)', fontWeight: 600 }}>{formatMoney(r.pricePerServing)}</td>
                       <td>
                         <span className="badge badge-info" style={{ fontSize: '0.75rem' }}>
@@ -355,7 +367,7 @@ export default function RecipesPage() {
                           <option value="archived">Archived</option>
                         </select>
                       </td>
-                      <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>{r.createdByEmail || '—'}</td>
+                      <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>{r.createdByEmail || '-'}</td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button className="btn btn-ghost btn-icon" onClick={() => viewDetail(r.id)}><FiEye /></button>
@@ -387,7 +399,7 @@ export default function RecipesPage() {
           <div className="modal-content" style={{ maxWidth: 700 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editing ? 'Edit Recipe' : 'Add New Recipe'}</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>âœ•</button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '70vh', overflowY: 'auto' }}>
               {inp('Recipe Name *', 'name')}
@@ -485,7 +497,7 @@ export default function RecipesPage() {
                                 background: 'none', border: 'none', color: 'var(--color-primary)',
                                 fontSize: '0.7rem', cursor: 'pointer', marginLeft: 6, textDecoration: 'underline'
                               }}>
-                              {row.inputMode === 'select' ? '+ New' : '← Select'}
+                              {row.inputMode === 'select' ? '+ New' : 'â† Select'}
                             </button>
                           </label>
                           {row.inputMode === 'select' ? (
@@ -550,7 +562,7 @@ export default function RecipesPage() {
           <div className="modal-content" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{detailItem.name}</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setDetailItem(null)}>✕</button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setDetailItem(null)}><FiX /></button>
             </div>
             <div className="modal-body">
               <div style={{ marginBottom: 12 }}>
@@ -647,7 +659,7 @@ export default function RecipesPage() {
                           <td style={{ fontWeight: 500 }}>{ri.ingredientName}</td>
                           <td>{ri.quantity}</td>
                           <td>{ri.unit}</td>
-                          <td>{ri.isOptional ? <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>Optional</span> : '—'}</td>
+                          <td>{ri.isOptional ? <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>Optional</span> : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -667,7 +679,7 @@ export default function RecipesPage() {
           <div className="modal-content" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Confirm Delete</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowDeleteConfirm(null)}>✕</button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setShowDeleteConfirm(null)}>âœ•</button>
             </div>
             <div className="modal-body" style={{ textAlign: 'center' }}>
               <div style={{ color: 'var(--color-danger)', fontSize: '3rem', marginBottom: 16 }}>
@@ -689,3 +701,5 @@ export default function RecipesPage() {
     </div>
   );
 }
+
+
