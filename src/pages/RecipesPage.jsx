@@ -153,8 +153,19 @@ export default function RecipesPage() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
-    setSaving(true);
+    if (!form.name.trim()) {
+      showToast('Recipe name is required', 'error');
+      return;
+    }
+    if (!form.instructions.trim()) {
+      showToast('Instructions are required', 'error');
+      return;
+    }
+    const baseServingsNum = form.baseServings !== '' ? Number(form.baseServings) : 1;
+    if (Number.isNaN(baseServingsNum) || baseServingsNum <= 0) {
+      showToast('Servings must be at least 1', 'error');
+      return;
+    }
     const ingredientsPayload = form.ingredients
       .filter(r => (r.ingredientId || r.ingredientName.trim()) && r.quantity)
       .map(r => ({
@@ -164,13 +175,27 @@ export default function RecipesPage() {
         unit: r.unit || '',
         isOptional: r.isOptional || false,
       }));
+    if (ingredientsPayload.length === 0) {
+      showToast('Please add at least one ingredient', 'error');
+      return;
+    }
+    const seen = new Set();
+    for (const ing of ingredientsPayload) {
+      const key = ing.ingredientId || (ing.ingredientName || '').toLowerCase();
+      if (seen.has(key)) {
+        showToast('Duplicate ingredient found. Please remove duplicates.', 'error');
+        return;
+      }
+      seen.add(key);
+    }
+    setSaving(true);
     const payload = {
-      name: form.name,
+      name: form.name.trim(),
       description: form.description,
-      instructions: form.instructions,
+      instructions: form.instructions.trim(),
       prepTimeMin: form.prepTimeMin !== '' ? Number(form.prepTimeMin) : null,
       cookTimeMin: form.cookTimeMin !== '' ? Number(form.cookTimeMin) : null,
-      baseServings: form.baseServings !== '' ? Number(form.baseServings) : 1,
+      baseServings: baseServingsNum,
       imageUrl: form.imageUrl,
       status: form.status,
       ingredients: ingredientsPayload,

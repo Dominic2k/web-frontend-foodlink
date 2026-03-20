@@ -189,11 +189,14 @@ export default function DashboardPage() {
 
   // Order status donut
   const pendingOrders = stats?.pendingOrders || 0;
-  const totalOrders = stats?.totalOrders || 0;
-  const completedOrders = Math.max(0, totalOrders - pendingOrders);
+  const confirmedOrders = stats?.confirmedOrders || 0;
+  const completedOrders = stats?.completedOrders || 0;
+  const canceledOrders = stats?.canceledOrders || 0;
   const orderDonutData = [
-    { name: 'Completed', value: completedOrders, color: '#2e7d32' },
     { name: 'Pending', value: pendingOrders, color: '#ff9800' },
+    { name: 'Confirmed', value: confirmedOrders, color: '#2196f3' },
+    { name: 'Completed', value: completedOrders, color: '#2e7d32' },
+    { name: 'Canceled', value: canceledOrders, color: '#d32f2f' },
   ];
 
   const renderNote = (items) => (

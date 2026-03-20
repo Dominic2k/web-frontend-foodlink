@@ -90,6 +90,7 @@ export default function IngredientsPage() {
   };
 
   const openCreate = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
     setEditing(null);
     setForm({
       name: '',
@@ -99,7 +100,7 @@ export default function IngredientsPage() {
       stockQuantityBase: 0,
       imageUrl: '',
       expirationDate: '',
-      receivedDate: '',
+      receivedDate: todayStr,
       isActive: true,
       caloriesPer100: '',
       proteinGPer100: '',
@@ -136,7 +137,28 @@ export default function IngredientsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || form.pricePerBaseUnit === '' || form.baseUnit.trim() === '') return;
+    if (!form.name.trim()) {
+      showToast('Ingredient name is required', 'error');
+      return;
+    }
+    if (form.pricePerBaseUnit === '') {
+      showToast('Price per base unit is required', 'error');
+      return;
+    }
+    if (!form.baseUnit.trim()) {
+      showToast('Base unit is required', 'error');
+      return;
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (form.expirationDate && form.expirationDate < todayStr) {
+      showToast('Expiration date must be today or in the future', 'error');
+      return;
+    }
+    if (form.expirationDate && form.receivedDate && form.expirationDate < form.receivedDate) {
+      showToast('Expiration date must be on or after received date', 'error');
+      return;
+    }
 
     setSaving(true);
     const payload = {
