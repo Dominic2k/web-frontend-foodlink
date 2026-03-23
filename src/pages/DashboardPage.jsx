@@ -15,6 +15,7 @@ import {
   FiTrash2,
   FiRefreshCw,
   FiZap,
+  FiSmartphone,
 } from 'react-icons/fi';
 import {
   XAxis,
@@ -159,6 +160,13 @@ export default function DashboardPage() {
       icon: FiActivity,
       gradient: 'linear-gradient(135deg, #ff8a65, #ff5722)',
     },
+    {
+      label: 'App Visits',
+      value: stats?.totalAppVisits || 0,
+      sub: `${stats?.todayAppVisits || 0} today`,
+      icon: FiSmartphone,
+      gradient: 'linear-gradient(135deg, #26c6da, #00838f)',
+    },
   ];
 
   // Pie chart — User status
@@ -181,12 +189,36 @@ export default function DashboardPage() {
 
   // Order status donut
   const pendingOrders = stats?.pendingOrders || 0;
-  const totalOrders = stats?.totalOrders || 0;
-  const completedOrders = Math.max(0, totalOrders - pendingOrders);
+  const confirmedOrders = stats?.confirmedOrders || 0;
+  const completedOrders = stats?.completedOrders || 0;
+  const canceledOrders = stats?.canceledOrders || 0;
   const orderDonutData = [
-    { name: 'Completed', value: completedOrders, color: '#2e7d32' },
     { name: 'Pending', value: pendingOrders, color: '#ff9800' },
+    { name: 'Confirmed', value: confirmedOrders, color: '#2196f3' },
+    { name: 'Completed', value: completedOrders, color: '#2e7d32' },
+    { name: 'Canceled', value: canceledOrders, color: '#d32f2f' },
   ];
+
+  const renderNote = (items) => (
+    <div
+      style={{
+        marginBottom: 12,
+        fontSize: '0.8125rem',
+        color: 'var(--color-text-secondary)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        alignItems: 'flex-start',
+      }}
+    >
+      {items.map((it) => (
+        <span key={it.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: it.color, display: 'inline-block' }} />
+          <span>{it.name}: {it.value}</span>
+        </span>
+      ))}
+    </div>
+  );
 
   // Daily activity chart data
   const dailyActivityData = (stats?.dailyActivities || []).map(d => ({
@@ -273,7 +305,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
                 <YAxis tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Area
                   type="monotone"
                   dataKey="users"
@@ -293,6 +325,7 @@ export default function DashboardPage() {
             <h3>👥 User Status</h3>
           </div>
           <div className="card-body chart-body">
+            {renderNote(pieData)}
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
@@ -308,7 +341,7 @@ export default function DashboardPage() {
                     <Cell key={index} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Legend
                   verticalAlign="bottom"
                   iconType="circle"
@@ -336,7 +369,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
                 <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Area
                   type="monotone"
                   dataKey="actions"
@@ -356,6 +389,7 @@ export default function DashboardPage() {
             <h3>🛒 Order Status</h3>
           </div>
           <div className="card-body chart-body">
+            {renderNote(orderDonutData)}
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
@@ -371,7 +405,7 @@ export default function DashboardPage() {
                     <Cell key={index} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
                 <Legend
                   verticalAlign="bottom"
                   iconType="circle"
@@ -382,7 +416,70 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 5: Recent Activity Log — spans full width */}
+        {/* 5: App Visits Trend — Area Chart */}
+        <div className="card chart-card">
+          <div className="card-header">
+            <h3>📱 App Visits (Last 7 Days)</h3>
+          </div>
+          <div className="card-body chart-body">
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={(stats?.dailyAppVisits || []).map(d => ({ date: d.date, visits: d.count }))}>
+                <defs>
+                  <linearGradient id="visitGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#26c6da" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#26c6da" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#616161' }} axisLine={{ stroke: '#e0e0e0' }} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff' }} itemStyle={{ color: '#fff' }} />
+                <Area
+                  type="monotone"
+                  dataKey="visits"
+                  stroke="#26c6da"
+                  strokeWidth={3}
+                  fill="url(#visitGradient)"
+                  name="Visits"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 6: Top Purchased Recipes */}
+        <div className="card chart-card">
+          <div className="card-header">
+            <h3>⭐ Top Purchased Dishes</h3>
+          </div>
+          <div className="card-body chart-body" style={{ padding: '0 10px 10px 10px', overflowY: 'auto' }}>
+            {(stats?.topPurchasedRecipes || []).length === 0 ? (
+              <div className="activity-empty">
+                <FiBook style={{ fontSize: '1.5rem', opacity: 0.4 }} />
+                <span>No purchases recorded yet.</span>
+              </div>
+            ) : (
+              <div className="top-recipe-items">
+                {(stats?.topPurchasedRecipes || []).map((recipe, idx) => (
+                  <div key={recipe.id} className="top-recipe-item">
+                    <span className="top-recipe-rank">#{idx + 1}</span>
+                    {recipe.imageUrl ? (
+                       <img src={recipe.imageUrl} alt={recipe.name} className="top-recipe-img" />
+                    ) : (
+                       <div className="top-recipe-icon-placeholder"><FiBook /></div>
+                    )}
+                    <div className="top-recipe-info">
+                      <span className="top-recipe-name">{recipe.name}</span>
+                      <span className="top-recipe-count">{recipe.purchaseCount} sold</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 7: Recent Activity Log — spans full width */}
         <div className="card chart-card chart-card-wide">
           <div className="card-header">
             <h3>📋 Recent Activity</h3>

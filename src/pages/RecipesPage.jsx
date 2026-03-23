@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
-import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiEye } from 'react-icons/fi';
+import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiEye, FiX } from 'react-icons/fi';
+import { getErrorMessage } from '../utils/errorMessage';
+import './ManagementToolbar.css';
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'All' },
+  { value: '', label: 'All Status' },
   { value: 'draft', label: 'Draft' },
   { value: 'published', label: 'Published' },
   { value: 'archived', label: 'Archived' },
@@ -12,11 +14,14 @@ const STATUS_OPTIONS = [
 const STATUS_BADGE = { draft: 'badge-warning', published: 'badge-success', archived: 'badge-info' };
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', archived: 'Archived' };
 
+const EMPTY_INGREDIENT_ROW = { ingredientId: '', ingredientName: '', quantity: '', unit: '', isOptional: false, inputMode: 'select' };
+
 export default function RecipesPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -25,52 +30,176 @@ export default function RecipesPage() {
   const [detailItem, setDetailItem] = useState(null);
   const [form, setForm] = useState({
     name: '', description: '', instructions: '', prepTimeMin: '', cookTimeMin: '',
-    baseServings: '1', imageUrl: '', status: 'draft',
+    baseServings: '1', imageUrl: '', status: 'draft', ingredients: [],
   });
   const [saving, setSaving] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
   const [toast, setToast] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null); // stores recipe ID to delete
+  const [allIngredients, setAllIngredients] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
+  const [showFullInstructions, setShowFullInstructions] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminAPI.getRecipes({ search, status: statusFilter || undefined, page, size: 10, sortBy: 'createdAt', sortDir: 'desc' });
+      const res = await adminAPI.getRecipes({
+        search,
+        status: statusFilter || undefined,
+        category: categoryFilter || undefined,
+        page,
+        size: 10,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
+      });
       const d = res.data.data;
       setItems(d.content || []);
       setTotalPages(d.totalPages || 0);
       setTotalElements(d.totalElements || 0);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [search, statusFilter, page]);
+  }, [search, statusFilter, categoryFilter, page]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
-  useEffect(() => { setPage(0); }, [search, statusFilter]);
+  useEffect(() => { fetchData(); fetchAllCategories(); }, [fetchData]);
+  useEffect(() => { setPage(0); }, [search, statusFilter, categoryFilter]);
+
+  const fetchAllIngredients = async () => {
+    try {
+      const res = await adminAPI.getAllIngredients();
+      setAllIngredients(res.data.data || []);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchAllCategories = async () => {
+    try {
+      const res = await adminAPI.getAllDishCategories();
+      setAllCategories(res.data.data || []);
+    } catch (e) { console.error(e); }
+  };
 
   const showToast = (msg, type) => { setToast({ message: msg, type }); setTimeout(() => setToast(null), 3000); };
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', description: '', instructions: '', prepTimeMin: '', cookTimeMin: '', baseServings: '1', imageUrl: '', status: 'draft' });
+    setForm({ name: '', description: '', instructions: '', prepTimeMin: '', cookTimeMin: '', baseServings: '1', imageUrl: '', status: 'draft', ingredients: [], categoryIds: [] });
+    fetchAllIngredients();
+    fetchAllCategories();
     setShowModal(true);
   };
 
-  const openEdit = (item) => {
+  const openEdit = async (item) => {
     setEditing(item);
-    setForm({
-      name: item.name || '', description: item.description || '', instructions: item.instructions || '',
-      prepTimeMin: item.prepTimeMin ?? '', cookTimeMin: item.cookTimeMin ?? '',
-      baseServings: item.baseServings ?? '1', imageUrl: item.imageUrl || '', status: item.status || 'draft',
-    });
+    await fetchAllIngredients();
+    await fetchAllCategories();
+    // fetch full detail to get ingredients
+    try {
+      const res = await adminAPI.getRecipeById(item.id);
+      const detail = res.data.data;
+      const ingredients = (detail.ingredients || []).map(ri => ({
+        ingredientId: ri.ingredientId || '',
+        ingredientName: ri.ingredientName || '',
+        quantity: ri.quantity ?? '',
+        unit: ri.unit || '',
+        isOptional: ri.isOptional || false,
+        inputMode: ri.ingredientId ? 'select' : 'text',
+      }));
+      setForm({
+        name: detail.name || '', description: detail.description || '', instructions: detail.instructions || '',
+        prepTimeMin: detail.prepTimeMin ?? '', cookTimeMin: detail.cookTimeMin ?? '',
+        baseServings: detail.baseServings ?? '1', imageUrl: detail.imageUrl || '', status: detail.status || 'draft',
+        ingredients,
+        categoryIds: (detail.categories || []).map(c => c.id),
+      });
+    } catch {
+      // fallback to basic info
+      setForm({
+        name: item.name || '', description: item.description || '', instructions: item.instructions || '',
+        prepTimeMin: item.prepTimeMin ?? '', cookTimeMin: item.cookTimeMin ?? '',
+        baseServings: item.baseServings ?? '1', imageUrl: item.imageUrl || '', status: item.status || 'draft',
+        ingredients: [],
+        categoryIds: (item.categories || []).map(c => c.id),
+      });
+    }
     setShowModal(true);
+  };
+
+  // --- Ingredient row helpers ---
+  const addIngredientRow = () => {
+    setForm(f => ({ ...f, ingredients: [...f.ingredients, { ...EMPTY_INGREDIENT_ROW }] }));
+  };
+
+  const removeIngredientRow = (idx) => {
+    setForm(f => ({ ...f, ingredients: f.ingredients.filter((_, i) => i !== idx) }));
+  };
+
+  const updateIngredientRow = (idx, field, value) => {
+    setForm(f => {
+      const list = [...f.ingredients];
+      list[idx] = { ...list[idx], [field]: value };
+      // When switching input mode, clear the other field
+      if (field === 'inputMode') {
+        if (value === 'select') list[idx].ingredientName = '';
+        else list[idx].ingredientId = '';
+      }
+      // When selecting an ingredient, auto-fill unit from ingredient's defaultUnit
+      if (field === 'ingredientId' && value) {
+        const found = allIngredients.find(ing => ing.id === value);
+        if (found && found.defaultUnit && !list[idx].unit) {
+          list[idx].unit = found.defaultUnit;
+        }
+      }
+      return { ...f, ingredients: list };
+    });
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      showToast('Recipe name is required', 'error');
+      return;
+    }
+    if (!form.instructions.trim()) {
+      showToast('Instructions are required', 'error');
+      return;
+    }
+    const baseServingsNum = form.baseServings !== '' ? Number(form.baseServings) : 1;
+    if (Number.isNaN(baseServingsNum) || baseServingsNum <= 0) {
+      showToast('Servings must be at least 1', 'error');
+      return;
+    }
+    const ingredientsPayload = form.ingredients
+      .filter(r => (r.ingredientId || r.ingredientName.trim()) && r.quantity)
+      .map(r => ({
+        ingredientId: r.ingredientId || null,
+        ingredientName: r.ingredientName.trim() || null,
+        quantity: Number(r.quantity),
+        unit: r.unit || '',
+        isOptional: r.isOptional || false,
+      }));
+    if (ingredientsPayload.length === 0) {
+      showToast('Please add at least one ingredient', 'error');
+      return;
+    }
+    const seen = new Set();
+    for (const ing of ingredientsPayload) {
+      const key = ing.ingredientId || (ing.ingredientName || '').toLowerCase();
+      if (seen.has(key)) {
+        showToast('Duplicate ingredient found. Please remove duplicates.', 'error');
+        return;
+      }
+      seen.add(key);
+    }
     setSaving(true);
     const payload = {
-      ...form,
+      name: form.name.trim(),
+      description: form.description,
+      instructions: form.instructions.trim(),
       prepTimeMin: form.prepTimeMin !== '' ? Number(form.prepTimeMin) : null,
       cookTimeMin: form.cookTimeMin !== '' ? Number(form.cookTimeMin) : null,
-      baseServings: form.baseServings !== '' ? Number(form.baseServings) : 1,
+      baseServings: baseServingsNum,
+      imageUrl: form.imageUrl,
+      status: form.status,
+      ingredients: ingredientsPayload,
+      categoryIds: form.categoryIds || [],
     };
     try {
       if (editing) {
@@ -82,26 +211,57 @@ export default function RecipesPage() {
       }
       setShowModal(false);
       fetchData();
-    } catch (e) { showToast('Action failed', 'error'); }
+    } catch (e) {
+      showToast(
+        getErrorMessage(e, editing ? 'Failed to update recipe' : 'Failed to create recipe'),
+        'error'
+      );
+    }
     finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this recipe?')) return;
-    try { await adminAPI.deleteRecipe(id); showToast('Deleted', 'success'); fetchData(); }
-    catch (e) { showToast('Delete failed', 'error'); }
+    try {
+      await adminAPI.deleteRecipe(id);
+      showToast('Deleted successfully', 'success');
+      setShowDeleteConfirm(null);
+      fetchData();
+    } catch (e) {
+      showToast(getErrorMessage(e, 'Failed to delete recipe'), 'error');
+    }
   };
 
   const handleStatusChange = async (id, newStatus) => {
     try { await adminAPI.updateRecipeStatus(id, newStatus); showToast('Status updated successfully', 'success'); fetchData(); }
-    catch (e) { showToast('Failed', 'error'); }
+    catch (e) { showToast(getErrorMessage(e, 'Failed to update recipe status'), 'error'); }
   };
 
   const viewDetail = async (id) => {
     try {
       const res = await adminAPI.getRecipeById(id);
       setDetailItem(res.data.data);
-    } catch (e) { console.error(e); }
+      setShowFullInstructions(false);
+    } catch (e) {
+      console.error(e);
+      showToast(getErrorMessage(e, 'Failed to load recipe details'), 'error');
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const res = await adminAPI.uploadRecipeImage(file);
+      const url = res.data.data;
+      setForm(f => ({ ...f, imageUrl: url }));
+      showToast('Image uploaded successfully', 'success');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Failed to upload image'), 'error');
+    } finally {
+      setUploadingImg(false);
+      e.target.value = null; // reset input
+    }
   };
 
   const inp = (label, key, type = 'text') => (
@@ -110,6 +270,11 @@ export default function RecipesPage() {
       <input className="input" type={type} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
     </div>
   );
+
+  const formatMoney = (value) => {
+    if (value == null || value === '') return 'â€”';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value);
+  };
 
   return (
     <div style={{ animation: 'fadeIn var(--transition-base) ease' }}>
@@ -121,16 +286,28 @@ export default function RecipesPage() {
         <button className="btn btn-primary" onClick={openCreate}><FiPlus /> Add New</button>
       </div>
 
-      <div className="card" style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div className="input-with-icon" style={{ maxWidth: 300, flex: 1 }}>
+      <div className="card management-toolbar">
+        <div className="input-with-icon toolbar-search" style={{ maxWidth: 360, flex: '1 1 360px' }}>
           <FiSearch className="input-icon" />
           <input className="input" placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {STATUS_OPTIONS.map(s => (
-            <button key={s.value} className={`btn btn-sm ${statusFilter === s.value ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setStatusFilter(s.value)}>{s.label}</button>
-          ))}
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+        </div>
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+          <option value="">All categories</option>
+          {allCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+        </select>
+        </div>
+        <div className="toolbar-actions">
+        <button className="btn btn-outline" onClick={() => {
+          setSearch(''); setStatusFilter(''); setCategoryFilter(''); setPage(0);
+        }}>
+          Reset Filters
+        </button>
         </div>
       </div>
 
@@ -143,18 +320,45 @@ export default function RecipesPage() {
           <>
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
-                <thead><tr>
-                  <th>Name</th><th>Time</th><th>Servings</th><th>Status</th><th>Created By</th><th style={{ textAlign: 'right' }}>Actions</th>
-                </tr></thead>
+                <thead>
+                  <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Categories</th>
+                    <th>Time</th>
+                    <th>Servings</th>
+                    <th>Giá/khẩu phần</th>
+                    <th>Ingredients</th>
+                    <th>Status</th>
+                    <th>Average Rating</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {items.map(r => (
                     <tr key={r.id}>
+                      <td>{r.imageUrl ? <img src={r.imageUrl} alt={r.name} style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, border: "1px solid var(--color-border-light)" }} /> : "-"}</td>
                       <td style={{ fontWeight: 600 }}>{r.name}</td>
+                      <td>
+                        {r.categories && r.categories.length > 0 ? (
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {r.categories.map(c => (
+                              <span key={c.id} className="badge badge-info" style={{ fontSize: '0.7rem' }}>{c.name}</span>
+                            ))}
+                          </div>
+                        ) : <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>-</span>}
+                      </td>
                       <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
                         {r.prepTimeMin ? `${r.prepTimeMin}' prep` : ''}{r.prepTimeMin && r.cookTimeMin ? ' + ' : ''}{r.cookTimeMin ? `${r.cookTimeMin}' cook` : ''}
-                        {!r.prepTimeMin && !r.cookTimeMin && '—'}
+                        {!r.prepTimeMin && !r.cookTimeMin && '-'}
                       </td>
-                      <td style={{ color: 'var(--color-text-secondary)' }}>{r.baseServings || '—'}</td>
+                      <td style={{ color: 'var(--color-text-secondary)' }}>{r.baseServings || '-'}</td>
+                      <td style={{ color: 'var(--color-text-secondary)', fontWeight: 600 }}>{formatMoney(r.pricePerServing)}</td>
+                      <td>
+                        <span className="badge badge-info" style={{ fontSize: '0.75rem' }}>
+                          {r.ingredients ? r.ingredients.length : 0} items
+                        </span>
+                      </td>
                       <td>
                         <select className="input" style={{ padding: '4px 8px', fontSize: '0.75rem', width: 'auto', minWidth: 100 }}
                           value={r.status} onChange={e => handleStatusChange(r.id, e.target.value)}>
@@ -163,12 +367,16 @@ export default function RecipesPage() {
                           <option value="archived">Archived</option>
                         </select>
                       </td>
-                      <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>{r.createdByEmail || '—'}</td>
+                      <td style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                        {r.ratingSummary?.totalRatings
+                          ? `${r.ratingSummary.averageRating}/5 (${r.ratingSummary.totalRatings})`
+                          : 'No ratings yet'}
+                      </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button className="btn btn-ghost btn-icon" onClick={() => viewDetail(r.id)}><FiEye /></button>
                           <button className="btn btn-ghost btn-icon" onClick={() => openEdit(r)}><FiEdit2 /></button>
-                          <button className="btn btn-ghost btn-icon" style={{ color: 'var(--color-danger)' }} onClick={() => handleDelete(r.id)}><FiTrash2 /></button>
+                          <button className="btn btn-ghost btn-icon" style={{ color: 'var(--color-danger)' }} onClick={() => setShowDeleteConfirm(r.id)}><FiTrash2 /></button>
                         </div>
                       </td>
                     </tr>
@@ -192,12 +400,12 @@ export default function RecipesPage() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
+          <div className="modal-content" style={{ maxWidth: 700 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editing ? 'Edit Recipe' : 'Add New Recipe'}</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>✕</button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>âœ•</button>
             </div>
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '70vh', overflowY: 'auto' }}>
               {inp('Recipe Name *', 'name')}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>Description</label>
@@ -214,7 +422,15 @@ export default function RecipesPage() {
                 {inp('Cook Time (min)', 'cookTimeMin', 'number')}
                 {inp('Servings', 'baseServings', 'number')}
               </div>
-              {inp('Image URL', 'imageUrl')}
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>{inp('Image URL', 'imageUrl')}</div>
+                <div style={{ marginBottom: 4 }}>
+                  <input type="file" id="recipeImageUpload" style={{ display: 'none' }} accept="image/*" onChange={handleImageUpload} />
+                  <button type="button" className="btn btn-outline" style={{ height: 38 }} onClick={(e) => { e.preventDefault(); document.getElementById('recipeImageUpload').click(); }} disabled={uploadingImg}>
+                    {uploadingImg ? 'Uploading...' : 'Upload Image'}
+                  </button>
+                </div>
+              </div>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 4 }}>Status</label>
                 <select className="input" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
@@ -223,6 +439,119 @@ export default function RecipesPage() {
                   <option value="archived">Archived</option>
                 </select>
               </div>
+
+              {/* ===== Categories Section ===== */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 6 }}>Categories</label>
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', gap: 8,
+                  border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
+                  padding: '10px 12px', maxHeight: 120, overflowY: 'auto',
+                  background: 'var(--color-bg-secondary, rgba(0,0,0,0.02))'
+                }}>
+                  {allCategories.length === 0 ? (
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>No categories available</span>
+                  ) : allCategories.map(cat => (
+                    <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={(form.categoryIds || []).includes(cat.id)}
+                        onChange={e => {
+                          const ids = form.categoryIds || [];
+                          setForm(f => ({ ...f, categoryIds: e.target.checked ? [...ids, cat.id] : ids.filter(id => id !== cat.id) }));
+                        }} />
+                      {cat.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* ===== Ingredients Section ===== */}
+              <div style={{
+                marginTop: 8, border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)',
+                padding: 16, background: 'var(--color-bg-secondary, rgba(0,0,0,0.02))'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, margin: 0 }}>
+                    Ingredients ({form.ingredients.length})
+                  </h4>
+                  <button type="button" className="btn btn-sm btn-outline" onClick={addIngredientRow}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <FiPlus size={14} /> Add Ingredient
+                  </button>
+                </div>
+
+                {form.ingredients.length === 0 ? (
+                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem', textAlign: 'center', padding: '12px 0' }}>
+                    No ingredients added yet. Click "Add Ingredient" to start.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {form.ingredients.map((row, idx) => (
+                      <div key={idx} style={{
+                        display: 'flex', gap: 8, alignItems: 'flex-end',
+                        padding: '10px 12px', borderRadius: 'var(--radius-md)',
+                        background: 'var(--color-bg, white)', border: '1px solid var(--color-border)',
+                      }}>
+                        {/* Ingredient selector */}
+                        <div style={{ flex: 2, minWidth: 0 }}>
+                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 2 }}>
+                            Ingredient
+                            <button type="button"
+                              onClick={() => updateIngredientRow(idx, 'inputMode', row.inputMode === 'select' ? 'text' : 'select')}
+                              style={{
+                                background: 'none', border: 'none', color: 'var(--color-primary)',
+                                fontSize: '0.7rem', cursor: 'pointer', marginLeft: 6, textDecoration: 'underline'
+                              }}>
+                              {row.inputMode === 'select' ? '+ New' : 'â† Select'}
+                            </button>
+                          </label>
+                          {row.inputMode === 'select' ? (
+                            <select className="input" style={{ fontSize: '0.8125rem' }}
+                              value={row.ingredientId}
+                              onChange={e => updateIngredientRow(idx, 'ingredientId', e.target.value)}>
+                              <option value="">-- Select --</option>
+                              {allIngredients.map(ing => (
+                                <option key={ing.id} value={ing.id}>{ing.name}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input className="input" placeholder="Enter new ingredient name"
+                              style={{ fontSize: '0.8125rem' }}
+                              value={row.ingredientName}
+                              onChange={e => updateIngredientRow(idx, 'ingredientName', e.target.value)} />
+                          )}
+                        </div>
+                        {/* Quantity */}
+                        <div style={{ width: 80 }}>
+                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 2 }}>Qty</label>
+                          <input className="input" type="number" style={{ fontSize: '0.8125rem' }}
+                            value={row.quantity}
+                            onChange={e => updateIngredientRow(idx, 'quantity', e.target.value)} />
+                        </div>
+                        {/* Unit */}
+                        <div style={{ width: 90 }}>
+                          <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 500, color: 'var(--color-text-secondary)', marginBottom: 2 }}>Unit</label>
+                          <input className="input" placeholder="e.g. gram" style={{ fontSize: '0.8125rem' }}
+                            value={row.unit}
+                            onChange={e => updateIngredientRow(idx, 'unit', e.target.value)} />
+                        </div>
+                        {/* Optional checkbox */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingBottom: 8 }}>
+                          <input type="checkbox" id={`opt-${idx}`} checked={row.isOptional}
+                            onChange={e => updateIngredientRow(idx, 'isOptional', e.target.checked)} />
+                          <label htmlFor={`opt-${idx}`} style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>Optional</label>
+                        </div>
+                        {/* Remove button */}
+                        <button type="button" className="btn btn-ghost btn-icon"
+                          style={{ color: 'var(--color-danger)', padding: 4, marginBottom: 4 }}
+                          onClick={() => removeIngredientRow(idx)}>
+                          <FiX size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ marginTop: 8 }}>
                 {saving ? <div className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }}></div> : (editing ? 'Update' : 'Create')}
               </button>
@@ -237,36 +566,278 @@ export default function RecipesPage() {
           <div className="modal-content" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{detailItem.name}</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setDetailItem(null)}>✕</button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setDetailItem(null)}><FiX /></button>
             </div>
             <div className="modal-body">
               <div style={{ marginBottom: 12 }}>
                 <span className={`badge ${STATUS_BADGE[detailItem.status] || 'badge-info'}`}>{STATUS_LABEL[detailItem.status] || detailItem.status}</span>
               </div>
+              {detailItem.imageUrl && (
+                <div style={{ marginBottom: 16, borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                  <img src={detailItem.imageUrl} alt={detailItem.name} style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+                </div>
+              )}
               {detailItem.description && <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', marginBottom: 16 }}>{detailItem.description}</p>}
+
+              {/* Categories */}
+              {detailItem.categories && detailItem.categories.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Categories</h4>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {detailItem.categories.map(c => (
+                      <span key={c.id} className="badge badge-info">{c.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gap: 12, marginBottom: 18 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+                  {[
+                    { label: 'Prep', value: detailItem.prepTimeMin ? `${detailItem.prepTimeMin} min` : '-' },
+                    { label: 'Cook', value: detailItem.cookTimeMin ? `${detailItem.cookTimeMin} min` : '-' },
+                    { label: 'Servings', value: detailItem.baseServings || '-' },
+                  ].map((meta) => (
+                    <div
+                      key={meta.label}
+                      style={{
+                        border: '1px solid var(--color-border-light)',
+                        borderRadius: 12,
+                        padding: '10px 12px',
+                        background: 'rgba(0, 0, 0, 0.02)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color: 'var(--color-text-muted)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          marginBottom: 4,
+                        }}
+                      >
+                        {meta.label}
+                      </div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)' }}>{meta.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                  <div
+                    style={{
+                      border: '1px solid var(--color-border-light)',
+                      borderRadius: 12,
+                      padding: 14,
+                      background: '#FFFDFC',
+                    }}
+                  >
+                    <h4
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        marginBottom: 10,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        color: 'var(--color-text-muted)',
+                      }}
+                    >
+                      Recipe Meta
+                    </h4>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {[
+                        ['Created by', detailItem.createdByEmail || '-'],
+                        ['Created at', detailItem.createdAt ? new Date(detailItem.createdAt).toLocaleString('vi-VN') : '-'],
+                        ['Ingredient cost', formatMoney(detailItem.totalIngredientPrice)],
+                        ['Price / serving', formatMoney(detailItem.pricePerServing)],
+                      ].map(([label, value]) => (
+                        <div
+                          key={label}
+                          style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}
+                        >
+                          <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>{label}</span>
+                          <span
+                            style={{
+                              fontSize: '0.88rem',
+                              fontWeight: 600,
+                              color: 'var(--color-text)',
+                              textAlign: 'right',
+                            }}
+                          >
+                            {value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      border: '1px solid #F0D9D5',
+                      borderRadius: 12,
+                      padding: 14,
+                      background: '#FFF8F6',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 128,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                        color: '#A05A4A',
+                      }}
+                    >
+                      Dish Ratings
+                    </div>
+                    {detailItem.ratingSummary?.totalRatings ? (
+                      <div>
+                        <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#7C2D12', lineHeight: 1 }}>
+                          {detailItem.ratingSummary.averageRating}
+                          <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>/5</span>
+                        </div>
+                        <div style={{ marginTop: 6, fontSize: '0.82rem', color: '#9A3412' }}>
+                          {detailItem.ratingSummary.totalRatings} rating{detailItem.ratingSummary.totalRatings > 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.88rem', color: 'var(--color-text-secondary)' }}>
+                        No ratings yet
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'none' }}>
+                <div style={{ fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 600 }}>Created by:</span>{' '}
+                  <span style={{ color: 'var(--color-text-secondary)' }}>{detailItem.createdByEmail || '—'}</span>
+                </div>
+                <div style={{ fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 600 }}>Created at:</span>{' '}
+                  <span style={{ color: 'var(--color-text-secondary)' }}>
+                    {detailItem.createdAt ? new Date(detailItem.createdAt).toLocaleString('vi-VN') : '—'}
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'none' }}>
+                <div style={{ fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 600 }}>Total ingredient cost:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(detailItem.totalIngredientPrice)}</span>
+                </div>
+                <div style={{ fontSize: '0.8125rem' }}>
+                  <span style={{ fontWeight: 600 }}>Price per serving:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{formatMoney(detailItem.pricePerServing)}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'none' }}>
+                <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Dish Ratings</h4>
+                {detailItem.ratingSummary?.totalRatings ? (
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: '0.8125rem' }}>
+                      <span style={{ fontWeight: 600 }}>Average rating:</span>{' '}
+                      <span style={{ color: 'var(--color-text-secondary)' }}>
+                        {detailItem.ratingSummary.averageRating}/5
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8125rem' }}>
+                      <span style={{ fontWeight: 600 }}>Total ratings:</span>{' '}
+                      <span style={{ color: 'var(--color-text-secondary)' }}>
+                        {detailItem.ratingSummary.totalRatings}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', margin: 0 }}>
+                    No ratings yet
+                  </p>
+                )}
+              </div>
+
               {detailItem.instructions && (
                 <div style={{ marginBottom: 16 }}>
                   <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Instructions</h4>
-                  <p style={{ fontSize: '0.875rem', whiteSpace: 'pre-wrap', color: 'var(--color-text-secondary)' }}>{detailItem.instructions}</p>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    color: 'var(--color-text-secondary)',
+                    maxHeight: showFullInstructions ? 'none' : '120px',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    transition: 'max-height 0.3s ease'
+                  }}>
+                    <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{detailItem.instructions}</p>
+                    {!showFullInstructions && detailItem.instructions.length > 200 && (
+                      <div style={{
+                        position: 'absolute', bottom: 0, left: 0, right: 0, height: 40,
+                        background: 'linear-gradient(transparent, var(--color-bg, white))',
+                        pointerEvents: 'none'
+                      }}></div>
+                    )}
+                  </div>
+                  {detailItem.instructions.length > 200 && (
+                    <button
+                      className="btn btn-ghost"
+                      style={{ fontSize: '0.75rem', padding: '4px 0', height: 'auto', marginTop: 4, color: 'var(--color-primary)' }}
+                      onClick={() => setShowFullInstructions(!showFullInstructions)}
+                    >
+                      {showFullInstructions ? 'Show less' : 'Read full instructions'}
+                    </button>
+                  )}
                 </div>
               )}
-              {detailItem.ingredients && detailItem.ingredients.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Ingredients</h4>
+
+              {/* Ingredients in detail */}
+              <div>
+                <h4 style={{ fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>
+                  Ingredients {detailItem.ingredients ? `(${detailItem.ingredients.length})` : '(0)'}
+                </h4>
+                {detailItem.ingredients && detailItem.ingredients.length > 0 ? (
                   <table className="data-table">
-                    <thead><tr><th>Name</th><th>Quantity</th><th>Unit</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Quantity</th><th>Unit</th><th>Optional</th></tr></thead>
                     <tbody>
                       {detailItem.ingredients.map((ri, idx) => (
                         <tr key={idx}>
                           <td style={{ fontWeight: 500 }}>{ri.ingredientName}</td>
                           <td>{ri.quantity}</td>
                           <td>{ri.unit}</td>
+                          <td>{ri.isOptional ? <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>Optional</span> : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                </div>
-              )}
+                ) : (
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>No ingredients added.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
+          <div className="modal-content" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Confirm Delete</h3>
+              <button className="btn btn-ghost btn-icon" onClick={() => setShowDeleteConfirm(null)}>âœ•</button>
+            </div>
+            <div className="modal-body" style={{ textAlign: 'center' }}>
+              <div style={{ color: 'var(--color-danger)', fontSize: '3rem', marginBottom: 16 }}>
+                <FiTrash2 />
+              </div>
+              <p style={{ marginBottom: 24, color: 'var(--color-text-secondary)' }}>
+                Are you sure you want to delete this recipe? This action cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button className="btn btn-outline" onClick={() => setShowDeleteConfirm(null)}>Cancel</button>
+                <button className="btn btn-danger" onClick={() => handleDelete(showDeleteConfirm)}>Delete</button>
+              </div>
             </div>
           </div>
         </div>
@@ -276,3 +847,5 @@ export default function RecipesPage() {
     </div>
   );
 }
+
+

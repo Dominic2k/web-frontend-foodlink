@@ -3,12 +3,16 @@ import { adminAPI } from '../services/api';
 import Toast from '../components/Toast';
 import { FiSearch, FiEye, FiShield, FiShieldOff, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import UserDetailModal from '../components/UserDetailModal';
+import { getErrorMessage } from '../utils/errorMessage';
 import './UsersPage.css';
+import './ManagementToolbar.css';
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -17,11 +21,13 @@ export default function UsersPage() {
   const [toast, setToast] = useState(null);
   const pageSize = 10;
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = async () => {
     setLoading(true);
     try {
       const res = await adminAPI.getUsers({
         search,
+        role: roleFilter || undefined,
+        status: statusFilter || undefined,
         page,
         size: pageSize,
         sortBy: 'createdAt',
@@ -36,16 +42,15 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  };
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, roleFilter, statusFilter]);
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
-
-  // Debounced search
-  useEffect(() => {
-    setPage(0);
-  }, [search]);
+  }, [search, roleFilter, statusFilter, page]);
 
   const handleToggleStatus = async (user) => {
     const newStatus = user.status === 'active' ? 'blocked' : 'active';
@@ -60,7 +65,15 @@ export default function UsersPage() {
       );
       fetchUsers();
     } catch (err) {
-      showToast('Action failed', 'error');
+      showToast(
+        getErrorMessage(
+          err,
+          newStatus === 'blocked'
+            ? `Failed to block ${user.fullName}`
+            : `Failed to unblock ${user.fullName}`
+        ),
+        'error'
+      );
     } finally {
       setActionLoading(null);
     }
@@ -90,6 +103,22 @@ export default function UsersPage() {
     });
   };
 
+  const formatRelativeTime = (dateStr) => {
+    if (!dateStr) return '—';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Vừa xong';
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 30) return `${diffDays} ngày trước`;
+    return formatDate(dateStr);
+  };
+
   return (
     <div className="users-page">
       <div className="page-header">
@@ -98,12 +127,15 @@ export default function UsersPage() {
           <p className="page-subtitle">
             Total {totalElements} users
           </p>
+          <p className="page-subtitle" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+            Debug: {users.filter((u) => u.isAdmin).length} admin, {users.filter((u) => !u.isAdmin).length} user in current page
+          </p>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="users-toolbar card">
-        <div className="input-with-icon" style={{ maxWidth: 360 }}>
+      {/* Filters */}
+      <div className="card management-toolbar">
+        <div className="input-with-icon toolbar-search" style={{ maxWidth: 360, flex: '1 1 360px' }}>
           <FiSearch className="input-icon" />
           <input
             className="input"
@@ -111,6 +143,33 @@ export default function UsersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+        </div>
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+            <option value="">All roles</option>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div className="toolbar-field">
+          <select className="input toolbar-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </div>
+        <div className="toolbar-actions">
+          <button
+            className="btn btn-outline"
+            onClick={() => {
+              setSearch('');
+              setRoleFilter('');
+              setStatusFilter('');
+              setPage(0);
+            }}
+          >
+            Reset Filters
+          </button>
         </div>
       </div>
 
@@ -136,7 +195,7 @@ export default function UsersPage() {
                     <th>Email</th>
                     <th>Phone</th>
                     <th>Status</th>
-                    <th>Created</th>
+                    <th>Last Login</th>
                     <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -171,11 +230,14 @@ export default function UsersPage() {
                           {u.status === 'active' ? 'Active' : 'Blocked'}
                         </span>
                       </td>
-                      <td className="text-secondary">{formatDate(u.createdAt)}</td>
+                      <td className="text-secondary" title={u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never'}>
+                        {formatRelativeTime(u.lastLoginAt)}
+                      </td>
                       <td>
                         <div className="user-actions">
                           <button
                             className="btn btn-ghost btn-icon"
+                            style={{ color: 'var(--color-text)' }}
                             title="View details"
                             onClick={() => setSelectedUser(u)}
                           >
