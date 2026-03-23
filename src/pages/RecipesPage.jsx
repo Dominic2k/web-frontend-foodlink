@@ -166,15 +166,29 @@ export default function RecipesPage() {
       showToast('Servings must be at least 1', 'error');
       return;
     }
-    const ingredientsPayload = form.ingredients
-      .filter(r => (r.ingredientId || r.ingredientName.trim()) && r.quantity)
-      .map(r => ({
-        ingredientId: r.ingredientId || null,
-        ingredientName: r.ingredientName.trim() || null,
-        quantity: Number(r.quantity),
-        unit: r.unit || '',
-        isOptional: r.isOptional || false,
-      }));
+    const prepTimeNum = form.prepTimeMin !== '' ? Number(form.prepTimeMin) : null;
+    const cookTimeNum = form.cookTimeMin !== '' ? Number(form.cookTimeMin) : null;
+    if ((prepTimeNum !== null && (Number.isNaN(prepTimeNum) || prepTimeNum < 0)) ||
+        (cookTimeNum !== null && (Number.isNaN(cookTimeNum) || cookTimeNum < 0))) {
+      showToast('Prep time and cook time cannot be negative', 'error');
+      return;
+    }
+    const ingredientRows = form.ingredients
+      .filter(r => (r.ingredientId || r.ingredientName.trim()) && r.quantity !== '');
+    for (const r of ingredientRows) {
+      const qty = Number(r.quantity);
+      if (Number.isNaN(qty) || qty <= 0) {
+        showToast('Ingredient quantity must be a positive number', 'error');
+        return;
+      }
+    }
+    const ingredientsPayload = ingredientRows.map(r => ({
+      ingredientId: r.ingredientId || null,
+      ingredientName: r.ingredientName.trim() || null,
+      quantity: Number(r.quantity),
+      unit: r.unit || '',
+      isOptional: r.isOptional || false,
+    }));
     if (ingredientsPayload.length === 0) {
       showToast('Please add at least one ingredient', 'error');
       return;
@@ -193,8 +207,8 @@ export default function RecipesPage() {
       name: form.name.trim(),
       description: form.description,
       instructions: form.instructions.trim(),
-      prepTimeMin: form.prepTimeMin !== '' ? Number(form.prepTimeMin) : null,
-      cookTimeMin: form.cookTimeMin !== '' ? Number(form.cookTimeMin) : null,
+      prepTimeMin: prepTimeNum,
+      cookTimeMin: cookTimeNum,
       baseServings: baseServingsNum,
       imageUrl: form.imageUrl,
       status: form.status,
@@ -403,7 +417,9 @@ export default function RecipesPage() {
           <div className="modal-content" style={{ maxWidth: 700 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editing ? 'Edit Recipe' : 'Add New Recipe'}</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)}>âœ•</button>
+              <button className="btn btn-ghost btn-icon" onClick={() => setShowModal(false)} aria-label="Close">
+                <FiX />
+              </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: '70vh', overflowY: 'auto' }}>
               {inp('Recipe Name *', 'name')}
