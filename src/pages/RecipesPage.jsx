@@ -841,10 +841,23 @@ export default function RecipesPage() {
           <div className="modal-content" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Confirm Delete</h3>
-              <button className="btn btn-ghost btn-icon" onClick={() => setShowDeleteConfirm(null)}>âœ•</button>
+              <button className="btn btn-ghost btn-icon" aria-label="Close" onClick={() => setShowDeleteConfirm(null)}>
+                <FiX />
+              </button>
             </div>
             <div className="modal-body" style={{ textAlign: 'center' }}>
-              <div style={{ color: 'var(--color-danger)', fontSize: '3rem', marginBottom: 16 }}>
+              <div style={{
+                width: 76,
+                height: 76,
+                margin: '0 auto 16px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(229, 72, 77, 0.12)',
+                color: 'var(--color-danger)',
+                fontSize: '2.2rem'
+              }}>
                 <FiTrash2 />
               </div>
               <p style={{ marginBottom: 24, color: 'var(--color-text-secondary)' }}>
